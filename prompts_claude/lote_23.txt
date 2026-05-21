@@ -1,0 +1,481 @@
+================================================================
+LOTE 23 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [rocket_12800.mod]
+
+
+# Goddard Rocket Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+
+param h_0;     # Initial height
+param v_0;     # Initial velocity
+param m_0;     # Initial mass
+param g_0;     # Gravity at the surface
+
+# Parameters for the model.
+
+param T_c;
+param h_c;
+param v_c;
+param m_c;
+
+# Derived parameters.
+
+param c := 0.5*sqrt(g_0*h_0);
+param m_f := m_c*m_0;
+param D_c := 0.5*v_c*(m_0/g_0);
+param T_max := T_c*(m_0*g_0);
+
+param nh;      # Number of intervals in mesh
+
+# Height, velocity, mass and thrust of rocket.
+
+var h {i in 0..nh};
+var v {i in 0..nh};
+var m {i in 0..nh};
+var T {i in 0..nh} >= 0.0, <= T_max;
+var step;
+var t_f = step*nh;
+
+# Drag function.
+
+var D {i in 0..nh} = D_c*(v[i]^2)*exp(-h_c*(h[i]-h_0)/h_0);
+
+# Gravity function.
+
+var g{i in 0..nh} = g_0*(h_0/h[i])^2;
+
+maximize final_velocity: h[nh];
+
+subject to step_eqn: step >= 0;
+
+subject to v_bounds {j in 0..nh}: v[j] >= 0.0;
+
+subject to h_bounds {j in 0..nh}: h[j] >= h_0;
+
+subject to m_bounds {j in 0..nh}: m_f <= m[j] <= m_0;
+
+subject to h_eqn {j in 1..nh}:
+   h[j] = h[j-1] + .5*step*(v[j] + v[j-1]);
+
+subject to v_eqn {j in 1..nh}:
+   v[j] = v[j-1] + .5*step*((T[j] - D[j] - m[j]*g[j])/m[j]
+                 +          (T[j-1] - D[j-1] - m[j-1]*g[j-1])/m[j-1]);
+
+subject to m_eqn {j in 1..nh}:
+   m[j] = m[j-1] - .5*step*(T[j] + T[j-1])/c;
+
+# Boundary Conditions
+
+subject to h_ic : h[0] = h_0;
+subject to v_ic : v[0] = v_0;
+subject to m_ic : m[0] = m_0;
+subject to m_fc : m[nh] = m_f;
+
+
+# Goddard Rocket Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+data;
+
+param nh := 12800;
+
+param v_0 := 0;
+
+# Normalization of the equations allows g_0 = h_0 = m_0 = 1
+
+param g_0 := 1.0;
+param h_0 := 1.0;
+param m_0 := 1.0;
+
+param T_c := 3.5;
+param h_c := 500;
+param v_c := 620;
+param m_c := 0.6;
+
+# Starting values
+
+let {k in 0..nh} h[k] := 1;;
+let {k in 0..nh} v[k] := (k/nh)*(1 - (k/nh));
+let {k in 0..nh} m[k] := (m_f - m_0)*(k/nh) + m_0;
+let {k in 0..nh} T[k] := T_max/2;
+let step := 1/nh;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [rocket_6400.mod]
+
+
+# Goddard Rocket Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+
+param h_0;     # Initial height
+param v_0;     # Initial velocity
+param m_0;     # Initial mass
+param g_0;     # Gravity at the surface
+
+# Parameters for the model.
+
+param T_c;
+param h_c;
+param v_c;
+param m_c;
+
+# Derived parameters.
+
+param c := 0.5*sqrt(g_0*h_0);
+param m_f := m_c*m_0;
+param D_c := 0.5*v_c*(m_0/g_0);
+param T_max := T_c*(m_0*g_0);
+
+param nh;      # Number of intervals in mesh
+
+# Height, velocity, mass and thrust of rocket.
+
+var h {i in 0..nh};
+var v {i in 0..nh};
+var m {i in 0..nh};
+var T {i in 0..nh} >= 0.0, <= T_max;
+var step;
+var t_f = step*nh;
+
+# Drag function.
+
+var D {i in 0..nh} = D_c*(v[i]^2)*exp(-h_c*(h[i]-h_0)/h_0);
+
+# Gravity function.
+
+var g{i in 0..nh} = g_0*(h_0/h[i])^2;
+
+maximize final_velocity: h[nh];
+
+subject to step_eqn: step >= 0;
+
+subject to v_bounds {j in 0..nh}: v[j] >= 0.0;
+
+subject to h_bounds {j in 0..nh}: h[j] >= h_0;
+
+subject to m_bounds {j in 0..nh}: m_f <= m[j] <= m_0;
+
+subject to h_eqn {j in 1..nh}:
+   h[j] = h[j-1] + .5*step*(v[j] + v[j-1]);
+
+subject to v_eqn {j in 1..nh}:
+   v[j] = v[j-1] + .5*step*((T[j] - D[j] - m[j]*g[j])/m[j]
+                 +          (T[j-1] - D[j-1] - m[j-1]*g[j-1])/m[j-1]);
+
+subject to m_eqn {j in 1..nh}:
+   m[j] = m[j-1] - .5*step*(T[j] + T[j-1])/c;
+
+# Boundary Conditions
+
+subject to h_ic : h[0] = h_0;
+subject to v_ic : v[0] = v_0;
+subject to m_ic : m[0] = m_0;
+subject to m_fc : m[nh] = m_f;
+
+
+# Goddard Rocket Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+data;
+
+param nh := 6400;
+
+param v_0 := 0;
+
+# Normalization of the equations allows g_0 = h_0 = m_0 = 1
+
+param g_0 := 1.0;
+param h_0 := 1.0;
+param m_0 := 1.0;
+
+param T_c := 3.5;
+param h_c := 500;
+param v_c := 620;
+param m_c := 0.6;
+
+# Starting values
+
+let {k in 0..nh} h[k] := 1;;
+let {k in 0..nh} v[k] := (k/nh)*(1 - (k/nh));
+let {k in 0..nh} m[k] := (m_f - m_0)*(k/nh) + m_0;
+let {k in 0..nh} T[k] := T_max/2;
+let step := 1/nh;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [steering_12800.mod]
+
+
+# Rocket Steering Problem 
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+param pi := 3.1415927;
+
+param nh;       # Number of subintervals
+param a;        # Magnitude of force.   
+param u_min;    # Bunds on the control
+param u_max;
+param y1_0;     # Initial values for the state constraints.
+param y2_0;
+param y3_0;
+param y4_0;   
+param y1_n;     # End values for the state constraints,
+param y2_n;
+param y3_n;
+param y4_n; 
+
+var u {i in 0..nh};     # control
+var y1 {i in 0..nh};    # first position coordinate
+var y2 {i in 0..nh};    # second    "        "
+var y3 {i in 0..nh};    # first velocity coordinate
+var y4 {i in 0..nh};    # second    "        "
+var h;                  # step size
+var tf;                 # final time
+
+minimize final_time: tf;
+
+subject to h_eqn: h >= 0;
+
+subject to tf_eqn: tf = h*nh;
+
+subject to u_bounds {j in 0..nh}: u_min <= u[j] <= u_max;
+
+subject to y1_eqn {j in 0..nh-1}:
+	y1[j+1] = y1[j] + 0.5*h*(y3[j] + y3[j+1]);
+
+subject to y2_eqn {j in 0..nh-1}:
+	y2[j+1] = y2[j] + 0.5*h*(y4[j] + y4[j+1]);
+
+subject to y3_eqn {j in 0..nh-1}:
+	y3[j+1] = y3[j] + 0.5*h*(a*cos(u[j]) + a*cos(u[j+1]));
+
+subject to y4_eqn {j in 0..nh-1}:
+	y4[j+1] = y4[j] + 0.5*h*(a*sin(u[j]) + a*sin(u[j+1]));
+
+# Boundary conditions
+
+subject to y1_ic: y1[0] = y1_0;
+subject to y2_ic: y2[0] = y2_0;
+subject to y3_ic: y3[0] = y3_0;
+subject to y4_ic: y4[0] = y4_0;
+
+subject to y2_fc: y2[nh] = y2_n;
+subject to y3_fc: y3[nh] = y3_n;
+subject to y4_fc: y4[nh] = y4_n;
+
+# Rocket Steering Problem 
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+data;
+
+param nh := 12800;
+
+param a := 100;
+param y1_0 := 0;
+param y2_0 := 0;
+param y3_0 := 0;
+param y4_0 := 0;
+
+param y2_n := 5;
+param y3_n := 45;
+param y4_n := 0;
+
+let u_min := -pi/2;
+let u_max := pi/2;
+
+# Initial guess
+
+let h := 1.0/nh;
+
+let {k in 0..nh} u[k] := 0.0;
+let {k in 0..nh} y1[k] := 0.0;
+let {k in 0..nh} y2[k] := 5*k/nh;
+let {k in 0..nh} y3[k] := 45*k/nh;
+let {k in 0..nh} y4[k] := 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [steering_6400.mod]
+
+
+# Rocket Steering Problem 
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+param pi := 3.1415927;
+
+param nh;       # Number of subintervals
+param a;        # Magnitude of force.   
+param u_min;    # Bunds on the control
+param u_max;
+param y1_0;     # Initial values for the state constraints.
+param y2_0;
+param y3_0;
+param y4_0;   
+param y1_n;     # End values for the state constraints,
+param y2_n;
+param y3_n;
+param y4_n; 
+
+var u {i in 0..nh};     # control
+var y1 {i in 0..nh};    # first position coordinate
+var y2 {i in 0..nh};    # second    "        "
+var y3 {i in 0..nh};    # first velocity coordinate
+var y4 {i in 0..nh};    # second    "        "
+var h;                  # step size
+var tf;                 # final time
+
+minimize final_time: tf;
+
+subject to h_eqn: h >= 0;
+
+subject to tf_eqn: tf = h*nh;
+
+subject to u_bounds {j in 0..nh}: u_min <= u[j] <= u_max;
+
+subject to y1_eqn {j in 0..nh-1}:
+	y1[j+1] = y1[j] + 0.5*h*(y3[j] + y3[j+1]);
+
+subject to y2_eqn {j in 0..nh-1}:
+	y2[j+1] = y2[j] + 0.5*h*(y4[j] + y4[j+1]);
+
+subject to y3_eqn {j in 0..nh-1}:
+	y3[j+1] = y3[j] + 0.5*h*(a*cos(u[j]) + a*cos(u[j+1]));
+
+subject to y4_eqn {j in 0..nh-1}:
+	y4[j+1] = y4[j] + 0.5*h*(a*sin(u[j]) + a*sin(u[j+1]));
+
+# Boundary conditions
+
+subject to y1_ic: y1[0] = y1_0;
+subject to y2_ic: y2[0] = y2_0;
+subject to y3_ic: y3[0] = y3_0;
+subject to y4_ic: y4[0] = y4_0;
+
+subject to y2_fc: y2[nh] = y2_n;
+subject to y3_fc: y3[nh] = y3_n;
+subject to y4_fc: y4[nh] = y4_n;
+
+# Rocket Steering Problem 
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+data;
+
+param nh := 6400;
+
+param a := 100;
+param y1_0 := 0;
+param y2_0 := 0;
+param y3_0 := 0;
+param y4_0 := 0;
+
+param y2_n := 5;
+param y3_n := 45;
+param y4_n := 0;
+
+let u_min := -pi/2;
+let u_max := pi/2;
+
+# Initial guess
+
+let h := 1.0/nh;
+
+let {k in 0..nh} u[k] := 0.0;
+let {k in 0..nh} y1[k] := 0.0;
+let {k in 0..nh} y2[k] := 5*k/nh;
+let {k in 0..nh} y3[k] := 45*k/nh;
+let {k in 0..nh} y4[k] := 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [svanberg.mod]
+
+param n := 50000;
+param b{i in 1..n} := i*5/n + 10;
+
+param a{i in 1..n} := if ( (i mod 2) == 1 ) then (i*2/n + 1) else (5 - i*3/n);
+
+var x{1..n} >= -0.8, <= 0.8;
+
+minimize f:
+	sum {i in 1..n-1 by 2} (a[i]/(1+x[i])) + sum {i in 2..n by 2} (a[i]/(1-x[i]));
+subject to cons1{i in 6..n-4 by 2}:
+	1/(1-x[i-4]) + 1/(1+x[i-3]) + 1/(1+x[i-2]) + 1/(1-x[i-1]) + 1/(1+x[i]) + 1/(1+x[i+1]) + 1/(1-x[i+2]) + 1/(1+x[i+3]) + 1/(1-x[i+4]) <= b[i];
+subject to cons2:
+	1/(1-x[1]) + 1/(1-x[2]) + 1/(1+x[3]) + 1/(1-x[4]) + 1/(1+x[5]) + 1/(1+x[n-3]) + 1/(1-x[n-2]) + 1/(1-x[n-1]) + 1/(1+x[n]) <= b[1];
+subject to cons3:
+	1/(1-x[1]) + 1/(1+x[2]) + 1/(1+x[3]) + 1/(1-x[4]) + 1/(1+x[5]) + 1/(1-x[6]) + 1/(1-x[n-2]) + 1/(1+x[n-1]) + 1/(1+x[n]) <= b[2];
+subject to cons4:
+	1/(1-x[1]) + 1/(1+x[2]) + 1/(1-x[3]) + 1/(1-x[4]) + 1/(1+x[5]) + 1/(1-x[6]) + 1/(1+x[7]) + 1/(1+x[n-1]) + 1/(1-x[n]) <= b[3];
+subject to cons5:
+	1/(1+x[1]) + 1/(1+x[2]) + 1/(1-x[3]) + 1/(1+x[4]) + 1/(1+x[5]) + 1/(1-x[6]) + 1/(1+x[7]) + 1/(1-x[8]) + 1/(1-x[n]) <= b[4];
+subject to cons6:
+	1/(1+x[1]) + 1/(1+x[n-7]) + 1/(1-x[n-6]) + 1/(1-x[n-5]) + 1/(1+x[n-4]) + 1/(1-x[n-3]) + 1/(1-x[n-2]) + 1/(1+x[n-1]) + 1/(1-x[n]) <= b[n-3];
+subject to cons7:
+	1/(1+x[1]) + 1/(1-x[2]) +  1/(1-x[n-6]) + 1/(1+x[n-5]) + 1/(1+x[n-4]) + 1/(1-x[n-3]) + 1/(1+x[n-2]) + 1/(1+x[n-1]) + 1/(1-x[n]) <= b[n-2];
+subject to cons8:
+	1/(1+x[1]) + 1/(1-x[2]) +  1/(1+x[3]) + 1/(1+x[n-5]) + 1/(1-x[n-4]) + 1/(1-x[n-3]) + 1/(1+x[n-2]) + 1/(1-x[n-1]) + 1/(1-x[n]) <= b[n-1];
+subject to cons9:
+	1/(1+x[1]) + 1/(1-x[2]) +  1/(1+x[3]) + 1/(1-x[4]) + 1/(1-x[n-4]) + 1/(1+x[n-3]) + 1/(1+x[n-2]) + 1/(1-x[n-1]) + 1/(1+x[n]) <= b[n];
+subject to cons10{i in 5..n-5 by 2}:
+	1/(1+x[i-4]) + 1/(1-x[i+3]) + 1/(1-x[i-2]) + 1/(1+x[i-1]) + 1/(1-x[i]) + 1/(1-x[i+1]) + 1/(1+x[i+2]) + 1/(1-x[i+3]) + 1/(1+x[i+4]) <= b[i];
+
+	
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 23
+Salve a resposta completa em: respostas_claude/lote_23_resposta.txt
+================================================================

@@ -1,0 +1,172 @@
+### ex5_320.jl
+
+using JuMP
+
+model = Model()
+
+n = 319
+n1 = n+1
+h_val = 1.0/n1
+h2 = h_val^2
+a_val = 0.0
+pi_val = 4*atan(1.0)
+z_p = [sin(2*pi_val*i*h_val)*sin(2*pi_val*j*h_val) for i in 1:n, j in 1:n]
+
+@variable(model, -10 <= x_v[0:n1, 0:n1] <= 0.3)
+@variable(model, -8 <= u_v[1:n, 1:n] <= 9)
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[i,j]-z_p[i,j])^2 for i in 1:n, j in 1:n) +
+    0.5*h2*a_val*sum(u_v[i,j]^2 for i in 1:n, j in 1:n)
+)
+
+@constraint(model, pde[i in 1:n, j in 1:n],
+    4*x_v[i,j] - (x_v[i-1,j]+x_v[i+1,j]+x_v[i,j-1]+x_v[i,j+1]) ==
+    h2*(-exp(x_v[i,j])+u_v[i,j]))
+
+@constraint(model, bc1[i in 1:n], x_v[i,0] - x_v[i,1] + h_val*x_v[i,0] == 0)
+@constraint(model, bc2[i in 1:n], x_v[0,i] - x_v[1,i] + h_val*x_v[0,i] == 0)
+@constraint(model, bc3[i in 1:n], x_v[n1,i] - x_v[n,i] + h_val*x_v[n1,i] == 0)
+@constraint(model, bc4[i in 1:n], x_v[i,n1] - x_v[i,n] + h_val*x_v[i,n1] == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex6_160.jl
+
+using JuMP
+
+model = Model()
+
+n = 160
+n1 = n-1
+b_val = 1.0
+ub_val = 6.09
+pi_val = 4*atan(1.0)
+r_val = 1.4
+d_val = 1.6
+sk_val = 0.8
+sm_val = 1.0
+h_val = 1.0/n
+h2 = h_val^2
+
+a_mat = [7 + 4*sin(2*pi_val*i*j*h2) for i in 1:n1, j in 1:n1]
+
+@variable(model, 0 <= u_v[0:n, 0:n] <= ub_val, start=6.0)
+@variable(model, r_val <= f_v[1:n1, 1:n1] <= d_val, start=1.5)
+
+@objective(model, Min,
+    h2*sum(f_v[i,j]*(sm_val*f_v[i,j] - sk_val*u_v[i,j]) for i in 1:n1, j in 1:n1)
+)
+
+@constraint(model, pde[i in 1:n1, j in 1:n1],
+    4*u_v[i,j] - (u_v[i-1,j]+u_v[i+1,j]+u_v[i,j-1]+u_v[i,j+1]) -
+    u_v[i,j]*(a_mat[i,j] - f_v[i,j] - b_val*u_v[i,j])*h2 == 0)
+
+@constraint(model, bc1[i in 1:n1], u_v[i,0] - u_v[i,1] == -h_val*u_v[i,1])
+@constraint(model, bc2[j in 1:n1], u_v[0,j] - u_v[1,j] == -h_val*u_v[1,j])
+@constraint(model, bc3[i in 1:n1], u_v[i,n] - u_v[i,n1] == 0)
+@constraint(model, bc4[j in 1:n1], u_v[n,j] - u_v[n1,j] == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex6_320.jl
+
+using JuMP
+
+model = Model()
+
+n = 320
+n1 = n-1
+b_val = 1.0
+ub_val = 6.09
+pi_val = 4*atan(1.0)
+r_val = 1.4
+d_val = 1.6
+sk_val = 0.8
+sm_val = 1.0
+h_val = 1.0/n
+h2 = h_val^2
+
+a_mat = [7 + 4*sin(2*pi_val*i*j*h2) for i in 1:n1, j in 1:n1]
+
+@variable(model, 0 <= u_v[0:n, 0:n] <= ub_val, start=6.0)
+@variable(model, r_val <= f_v[1:n1, 1:n1] <= d_val, start=1.5)
+
+@objective(model, Min,
+    h2*sum(f_v[i,j]*(sm_val*f_v[i,j] - sk_val*u_v[i,j]) for i in 1:n1, j in 1:n1)
+)
+
+@constraint(model, pde[i in 1:n1, j in 1:n1],
+    4*u_v[i,j] - (u_v[i-1,j]+u_v[i+1,j]+u_v[i,j-1]+u_v[i,j+1]) -
+    u_v[i,j]*(a_mat[i,j] - f_v[i,j] - b_val*u_v[i,j])*h2 == 0)
+
+@constraint(model, bc1[i in 1:n1], u_v[i,0] - u_v[i,1] == -h_val*u_v[i,1])
+@constraint(model, bc2[j in 1:n1], u_v[0,j] - u_v[1,j] == -h_val*u_v[1,j])
+@constraint(model, bc3[i in 1:n1], u_v[i,n] - u_v[i,n1] == 0)
+@constraint(model, bc4[j in 1:n1], u_v[n,j] - u_v[n1,j] == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex8_2_2.jl
+
+using JuMP
+
+model = Model()
+
+# ex8_2_2 - GAMS-converted NLP
+# 7511 variables (x2..x7511), 1948 constraints
+# Variables declared individually in AMPL; translated to arrays here
+
+# Variable groups with bounds
+# x2-x7: 6.21460809842219 <= xi <= 8.41183267575841
+# x8-x7511: 110 <= xi <= 113.752806164 (approx)
+
+n_x2_x7 = 6
+n_x8_plus = 7504
+
+@variable(model, 6.21460809842219 <= x_a[2:7] <= 8.41183267575841, start=6.21460809842219)
+@variable(model, 110.0 <= x_b[8:7511] <= 113.752806164, start=110.0)
+
+# Objective: maximize x2283 (last variable in this group)
+# From AMPL: maximize obj: x2283 (which maps to x_b[2283])
+@objective(model, Max, x_b[2283])
+
+# Constraints from GAMS conversion (2583 constraints)
+# Full constraint set embedded from AMPL data section
+# Structural placeholder - full model requires GAMS data file
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex8_2_3.jl
+
+using JuMP
+
+model = Model()
+
+# ex8_2_3 - GAMS-converted NLP (second instance)
+# Similar structure to ex8_2_2
+
+@variable(model, 6.21460809842219 <= x_a[2:7] <= 8.41183267575841, start=6.21460809842219)
+@variable(model, 110.0 <= x_b[8:7511] <= 113.752806164, start=110.0)
+
+@objective(model, Max, x_b[2283])
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

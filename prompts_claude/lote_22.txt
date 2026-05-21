@@ -1,0 +1,640 @@
+================================================================
+LOTE 22 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [robot_1600.mod]
+
+
+# Robot Arm Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+param pi := 3.14159;
+
+param nh;               # number of intervals.
+param L;		# total length of arm
+
+# Upper bounds on the controls
+
+param max_u_rho;
+param max_u_the;
+param max_u_phi;
+
+# Initial positions of the length and the angles for the robot arm
+
+param rho_0;
+param the_0;
+param phi_0;
+
+# Final positions of the length and the angles for the robot arm
+
+param rho_n;
+param the_n;
+param phi_n;
+
+# The length and the angles theta and phi for the robot arm.
+
+var rho {i in 0..nh} >=0, <= L; 
+var the {i in 0..nh} >= -pi, <= pi; 
+var phi {i in 0..nh} >=0, <= pi;
+
+# The derivatives of the length and the angles.
+    
+var rho_dot {i in 0..nh};
+var the_dot {i in 0..nh};
+var phi_dot {i in 0..nh};
+
+# The controls.
+
+var u_rho {i in 0..nh} >= -max_u_rho, <= max_u_rho;
+var u_the {i in 0..nh} >= -max_u_the, <= max_u_the;
+var u_phi {i in 0..nh} >= -max_u_phi, <= max_u_phi;
+
+# The step and the final time.
+
+var step >=0;
+var tf;
+
+# The moments of inertia.
+
+var I_the {i in 0..nh} = ((L-rho[i])^3+rho[i]^3)*(sin(phi[i]))^2/3.0;
+var I_phi {i in 0..nh} = ((L-rho[i])^3+rho[i]^3)/3.0;
+
+# The robot arm problem.
+
+minimize time: tf;
+
+subject to tf_eqn: tf = step*(nh);
+
+subject to rho_eqn {j in 1..nh}:
+        rho[j] = rho[j-1] + 0.5*step*(rho_dot[j] + rho_dot[j-1]);
+
+subject to the_eqn {j in 1..nh}:
+        the[j] = the[j-1] + 0.5*step*(the_dot[j] + the_dot[j-1]);
+
+subject to phi_eqn {j in 1..nh}:
+        phi[j] = phi[j-1] + 0.5*step*(phi_dot[j] + phi_dot[j-1]);
+
+subject to u_rho_eqn {j in 1..nh}:
+        rho_dot[j] = rho_dot[j-1] + 0.5*step*(u_rho[j] + u_rho[j-1])/L;
+
+subject to u_the_eqn {j in 1..nh}:
+        the_dot[j] = the_dot[j-1] + 
+                   0.5*step*(u_the[j]/I_the[j] + u_the[j-1]/I_the[j-1]);
+
+subject to u_phi_eqn {j in 1..nh}:
+        phi_dot[j] = phi_dot[j-1] + 
+                   0.5*step*(u_phi[j]/I_phi[j] + u_phi[j-1]/I_phi[j-1]);
+
+# Boundary Conditions
+
+subject to rho_0_eqn: rho[0] = 4.5;
+subject to the_0_eqn: the[0] = 0;
+subject to phi_0_eqn: phi[0] = pi/4;
+
+subject to rho_f_eqn: rho[nh] = 4.5;
+subject to the_f_eqn: the[nh] = 2*pi/3;
+subject to phi_f_eqn: phi[nh] = pi/4;
+
+subject to rho_dot_0_eqn: rho_dot[0] = 0;
+subject to the_dot_0_eqn: the_dot[0] = 0;
+subject to phi_dot_0_eqn: phi_dot[0] = 0;
+
+subject to rho_dot_f_eqn: rho_dot[nh] = 0;
+subject to the_dot_f_eqn: the_dot[nh] = 0;
+subject to phi_dot_f_eqn: phi_dot[nh] = 0;
+
+
+# Robot Arm Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+
+data;
+
+param nh :=  1600;
+
+param max_u_rho := 1;
+param max_u_the := 1;
+param max_u_phi := 1;
+
+param L := 5;
+
+let step := 1.0/nh;
+
+let {k in 0..nh} rho[k] := 4.5;
+let {k in 0..nh} the[k] := (2*pi/3)*(k/nh)^2;
+let {k in 0..nh} phi[k] := pi/4;
+
+let {k in 0..nh} rho_dot[k] := 0.0;
+let {k in 0..nh} the_dot[k] := (4*pi/3)*(k/nh);
+let {k in 0..nh} phi_dot[k] := 0.0;
+
+let {k in 0..nh} u_rho[k] := 0.0;
+let {k in 0..nh} u_the[k] := 0.0;
+let {k in 0..nh} u_phi[k] := 0.0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [robot_800.mod]
+
+
+# Robot Arm Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+param pi := 3.14159;
+
+param nh;               # number of intervals.
+param L;		# total length of arm
+
+# Upper bounds on the controls
+
+param max_u_rho;
+param max_u_the;
+param max_u_phi;
+
+# Initial positions of the length and the angles for the robot arm
+
+param rho_0;
+param the_0;
+param phi_0;
+
+# Final positions of the length and the angles for the robot arm
+
+param rho_n;
+param the_n;
+param phi_n;
+
+# The length and the angles theta and phi for the robot arm.
+
+var rho {i in 0..nh} >=0, <= L; 
+var the {i in 0..nh} >= -pi, <= pi; 
+var phi {i in 0..nh} >=0, <= pi;
+
+# The derivatives of the length and the angles.
+    
+var rho_dot {i in 0..nh};
+var the_dot {i in 0..nh};
+var phi_dot {i in 0..nh};
+
+# The controls.
+
+var u_rho {i in 0..nh} >= -max_u_rho, <= max_u_rho;
+var u_the {i in 0..nh} >= -max_u_the, <= max_u_the;
+var u_phi {i in 0..nh} >= -max_u_phi, <= max_u_phi;
+
+# The step and the final time.
+
+var step >=0;
+var tf;
+
+# The moments of inertia.
+
+var I_the {i in 0..nh} = ((L-rho[i])^3+rho[i]^3)*(sin(phi[i]))^2/3.0;
+var I_phi {i in 0..nh} = ((L-rho[i])^3+rho[i]^3)/3.0;
+
+# The robot arm problem.
+
+minimize time: tf;
+
+subject to tf_eqn: tf = step*(nh);
+
+subject to rho_eqn {j in 1..nh}:
+        rho[j] = rho[j-1] + 0.5*step*(rho_dot[j] + rho_dot[j-1]);
+
+subject to the_eqn {j in 1..nh}:
+        the[j] = the[j-1] + 0.5*step*(the_dot[j] + the_dot[j-1]);
+
+subject to phi_eqn {j in 1..nh}:
+        phi[j] = phi[j-1] + 0.5*step*(phi_dot[j] + phi_dot[j-1]);
+
+subject to u_rho_eqn {j in 1..nh}:
+        rho_dot[j] = rho_dot[j-1] + 0.5*step*(u_rho[j] + u_rho[j-1])/L;
+
+subject to u_the_eqn {j in 1..nh}:
+        the_dot[j] = the_dot[j-1] + 
+                   0.5*step*(u_the[j]/I_the[j] + u_the[j-1]/I_the[j-1]);
+
+subject to u_phi_eqn {j in 1..nh}:
+        phi_dot[j] = phi_dot[j-1] + 
+                   0.5*step*(u_phi[j]/I_phi[j] + u_phi[j-1]/I_phi[j-1]);
+
+# Boundary Conditions
+
+subject to rho_0_eqn: rho[0] = 4.5;
+subject to the_0_eqn: the[0] = 0;
+subject to phi_0_eqn: phi[0] = pi/4;
+
+subject to rho_f_eqn: rho[nh] = 4.5;
+subject to the_f_eqn: the[nh] = 2*pi/3;
+subject to phi_f_eqn: phi[nh] = pi/4;
+
+subject to rho_dot_0_eqn: rho_dot[0] = 0;
+subject to the_dot_0_eqn: the_dot[0] = 0;
+subject to phi_dot_0_eqn: phi_dot[0] = 0;
+
+subject to rho_dot_f_eqn: rho_dot[nh] = 0;
+subject to the_dot_f_eqn: the_dot[nh] = 0;
+subject to phi_dot_f_eqn: phi_dot[nh] = 0;
+
+
+# Robot Arm Problem
+# Trapezoidal Discretization
+# David Bortz - Summer 1998
+# Version 2.0 - September 2000
+
+
+data;
+
+param nh :=  800;
+
+param max_u_rho := 1;
+param max_u_the := 1;
+param max_u_phi := 1;
+
+param L := 5;
+
+let step := 1.0/nh;
+
+let {k in 0..nh} rho[k] := 4.5;
+let {k in 0..nh} the[k] := (2*pi/3)*(k/nh)^2;
+let {k in 0..nh} phi[k] := pi/4;
+
+let {k in 0..nh} rho_dot[k] := 0.0;
+let {k in 0..nh} the_dot[k] := (4*pi/3)*(k/nh);
+let {k in 0..nh} phi_dot[k] := 0.0;
+
+let {k in 0..nh} u_rho[k] := 0.0;
+let {k in 0..nh} u_the[k] := 0.0;
+let {k in 0..nh} u_phi[k] := 0.0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [robot_a.mod]
+
+# the ecker & kuperschmid & marin robot-design-example
+# with a finer discretization (three cases
+# written in AMPL by Yu-Ju Kuo and Hans D. Mittelmann, 6/2001
+param N;
+param M;
+param NH:=0;
+param NG:=M*18;
+param H:=1/(N-1);
+param TP{i in 1..M}:=(i-1)/(M-1);
+param K{i in 1..M}integer:=round(TP[i]/H+1e-6+1);
+param BB{i in 1..N}:=if(i==1) then 0.5*H else if (i==2) then 23*H/24 
+                     else if (i==N) then 0.5*H 
+                     else if (i==(N-1)) then 23*H/24 else H;
+param VI{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then (TP[j]-(K[j]-1)*H)^3/6/H^3 
+                        else if(K[j]-i+3==2) then 1.0/6.0+(TP[j]-(K[j]-1)*H)*.50/H+
+                            (TP[j]-(K[j]-1)*H)^2*.50/H^2-(TP[j]-(K[j]-1)*H)^3*.50/H^3
+                        else if(K[j]-i+3==3) then 1.0/6.0+(K[j]*H-TP[j])*.50/H+
+                            (K[j]*H-TP[j])^2*.50/H^2-(K[j]*H-TP[j])^3*.50/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])^3/6.0/H^3;
+param VI1{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)^2/2.0/H^3
+                        else if(K[j]-i+3==2) then  .50/H+(TP[j]-(K[j]-1)*H)/H^2-    
+                            (TP[j]-(K[j]-1)*H)^2*1.50/H^3
+                        else if(K[j]-i+3==3) then -.50/H-(K[j]*H-TP[j])/H^2+
+                            (K[j]*H-TP[j])^2*1.50/H^3
+                        else if(K[j]-i+3==4) then -(K[j]*H-TP[j])^2/2.0/H^3;
+param VI2{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)/H^3
+                        else if(K[j]-i+3==2) then  1.0/H^2-(TP[j]-(K[j]-1)*H)*3.0/H^3
+                        else if(K[j]-i+3==3) then 1.0/H^2-(K[j]*H-TP[j])*3.0/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])/H^3;
+param C11;
+param C12;
+param C13;
+param C21;
+param C22;
+param C23;
+param C31;
+param C32;
+param C33;
+param V11{i in 1..M}:=1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V12{i in 1..M}:=1.5*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V13{i in 1..M}:=1.5*((360*TP[i]-360)*TP[i]+60);
+param V21{i in 1..M}:=-.5*(cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1));
+param V22{i in 1..M}:=-.5*(-sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                       (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^2+
+                        cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*4.7*
+                        60*TP[i]*((2*TP[i]-3)*TP[i]+1));
+param V23{i in 1..M}:=-.5*(-cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^3-
+                         sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*3*4.7^2*
+                         30*TP[i]^2*((TP[i]-2)*TP[i]+1)*60*TP[i]*((2*TP[i]-3)*TP[i]+1)+
+                          cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                          ((360*TP[i]-360)*TP[i]+60)*4.7);
+param V31{i in 1..M}:=-1.3*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V32{i in 1..M}:=-1.3*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V33{i in 1..M}:=-1.3*((360*TP[i]-360)*TP[i]+60);
+var X{1..N}:=1.491400623321533;
+var SUM{i in 1..M}=sum{j in 1..N}VI[i,j]*X[j];
+var SUM1{i in 1..M}=sum{j in 1..N}VI1[i,j]*X[j];
+var SUM2{i in 1..M}=sum{j in 1..N}VI2[i,j]*X[j];
+minimize obj: sum{i in 1..N}BB[i]*X[i];
+s.t. gx1{i in 1..M}: C11*SUM[i]-V11[i]>=0;
+s.t. gx2{i in 1..M}: C11*SUM[i]+V11[i]>=0;
+s.t. gx3{i in 1..M}: C12*SUM[i]^3-(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx4{i in 1..M}: C12*SUM[i]^3+(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx5{i in 1..M}: C13*SUM[i]^5-(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx6{i in 1..M}: C13*SUM[i]^5+(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx7{i in 1..M}: C21*SUM[i]-V21[i]>=0;
+s.t. gx8{i in 1..M}: C21*SUM[i]+V21[i]>=0;
+s.t. gx9{i in 1..M}: C22*SUM[i]^3-(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx10{i in 1..M}: C22*SUM[i]^3+(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx11{i in 1..M}: C23*SUM[i]^5-(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx12{i in 1..M}: C23*SUM[i]^5+(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx13{i in 1..M}: C31*SUM[i]-V31[i]>=0;
+s.t. gx14{i in 1..M}: C31*SUM[i]+V31[i]>=0;
+s.t. gx15{i in 1..M}: C32*SUM[i]^3-(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx16{i in 1..M}: C32*SUM[i]^3+(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx17{i in 1..M}: C33*SUM[i]^5-(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx18{i in 1..M}: C33*SUM[i]^5+(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+
+data;
+param N:=1001;
+param M:=4001;
+param C11:=2;
+param C12:=8;
+param C13:=250;
+param C21:=3;
+param C22:=18;
+param C23:=650;
+param C31:=4;
+param C32:=50;
+param C33:=1000;
+
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [robot_b.mod]
+
+# the ecker & kuperschmid & marin robot-design-example
+# with a finer discretization (three cases
+# written in AMPL by Yu-Ju Kuo and Hans D. Mittelmann, 6/2001param N;
+param N;
+param M;
+param NH:=0;
+param NG:=M*18;
+param H:=1/(N-1);
+param TP{i in 1..M}:=(i-1)/(M-1);
+param K{i in 1..M}integer:=round(TP[i]/H+1e-6+1);
+param BB{i in 1..N}:=if(i==1) then 0.5*H else if (i==2) then 23*H/24 
+                     else if (i==N) then 0.5*H 
+                     else if (i==(N-1)) then 23*H/24 else H;
+param VI{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then (TP[j]-(K[j]-1)*H)^3/6/H^3 
+                        else if(K[j]-i+3==2) then 1.0/6.0+(TP[j]-(K[j]-1)*H)*.50/H+
+                            (TP[j]-(K[j]-1)*H)^2*.50/H^2-(TP[j]-(K[j]-1)*H)^3*.50/H^3
+                        else if(K[j]-i+3==3) then 1.0/6.0+(K[j]*H-TP[j])*.50/H+
+                            (K[j]*H-TP[j])^2*.50/H^2-(K[j]*H-TP[j])^3*.50/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])^3/6.0/H^3;
+param VI1{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)^2/2.0/H^3
+                        else if(K[j]-i+3==2) then  .50/H+(TP[j]-(K[j]-1)*H)/H^2-    
+                            (TP[j]-(K[j]-1)*H)^2*1.50/H^3
+                        else if(K[j]-i+3==3) then -.50/H-(K[j]*H-TP[j])/H^2+
+                            (K[j]*H-TP[j])^2*1.50/H^3
+                        else if(K[j]-i+3==4) then -(K[j]*H-TP[j])^2/2.0/H^3;
+param VI2{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)/H^3
+                        else if(K[j]-i+3==2) then  1.0/H^2-(TP[j]-(K[j]-1)*H)*3.0/H^3
+                        else if(K[j]-i+3==3) then 1.0/H^2-(K[j]*H-TP[j])*3.0/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])/H^3;
+param C11;
+param C12;
+param C13;
+param C21;
+param C22;
+param C23;
+param C31;
+param C32;
+param C33;
+param V11{i in 1..M}:=1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V12{i in 1..M}:=1.5*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V13{i in 1..M}:=1.5*((360*TP[i]-360)*TP[i]+60);
+param V21{i in 1..M}:=-.5*(cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1));
+param V22{i in 1..M}:=-.5*(-sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                       (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^2+
+                        cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*4.7*
+                        60*TP[i]*((2*TP[i]-3)*TP[i]+1));
+param V23{i in 1..M}:=-.5*(-cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^3-
+                         sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*3*4.7^2*
+                         30*TP[i]^2*((TP[i]-2)*TP[i]+1)*60*TP[i]*((2*TP[i]-3)*TP[i]+1)+
+                          cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                          ((360*TP[i]-360)*TP[i]+60)*4.7);
+param V31{i in 1..M}:=-1.3*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V32{i in 1..M}:=-1.3*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V33{i in 1..M}:=-1.3*((360*TP[i]-360)*TP[i]+60);
+var X{1..N}:=4.377146244049071;
+var SUM{i in 1..M}=sum{j in 1..N}VI[i,j]*X[j];
+var SUM1{i in 1..M}=sum{j in 1..N}VI1[i,j]*X[j];
+var SUM2{i in 1..M}=sum{j in 1..N}VI2[i,j]*X[j];
+minimize obj: sum{i in 1..N}BB[i]*X[i];
+s.t. gx1{i in 1..M}: C11*SUM[i]-V11[i]>=0;
+s.t. gx2{i in 1..M}: C11*SUM[i]+V11[i]>=0;
+s.t. gx3{i in 1..M}: C12*SUM[i]^3-(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx4{i in 1..M}: C12*SUM[i]^3+(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx5{i in 1..M}: C13*SUM[i]^5-(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx6{i in 1..M}: C13*SUM[i]^5+(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx7{i in 1..M}: C21*SUM[i]-V21[i]>=0;
+s.t. gx8{i in 1..M}: C21*SUM[i]+V21[i]>=0;
+s.t. gx9{i in 1..M}: C22*SUM[i]^3-(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx10{i in 1..M}: C22*SUM[i]^3+(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx11{i in 1..M}: C23*SUM[i]^5-(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx12{i in 1..M}: C23*SUM[i]^5+(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx13{i in 1..M}: C31*SUM[i]-V31[i]>=0;
+s.t. gx14{i in 1..M}: C31*SUM[i]+V31[i]>=0;
+s.t. gx15{i in 1..M}: C32*SUM[i]^3-(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx16{i in 1..M}: C32*SUM[i]^3+(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx17{i in 1..M}: C33*SUM[i]^5-(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx18{i in 1..M}: C33*SUM[i]^5+(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+
+
+data;
+param N:=1001;
+param M:=4001;
+param C11:=1;
+param C12:=3;
+param C13:=100;
+param C21:=1;
+param C22:=3;
+param C23:=100;
+param C31:=1;
+param C32:=3;
+param C33:=100;
+
+
+────────────────────────────────────────────────────────────────
+
+### [robot_c.mod]
+
+# the ecker & kuperschmid & marin robot-design-example
+# with a finer discretization (three cases
+# written in AMPL by Yu-Ju Kuo and Hans D. Mittelmann, 6/2001
+param N;
+param M;
+param NH:=0;
+param NG:=M*18;
+param H:=1/(N-1);
+param TP{i in 1..M}:=(i-1)/(M-1);
+param K{i in 1..M}integer:=round(TP[i]/H+1e-6+1);
+param BB{i in 1..N}:=if(i==1) then 0.5*H else if (i==2) then 23*H/24 
+                     else if (i==N) then 0.5*H 
+                     else if (i==(N-1)) then 23*H/24 else H;
+param VI{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then (TP[j]-(K[j]-1)*H)^3/6/H^3 
+                        else if(K[j]-i+3==2) then 1.0/6.0+(TP[j]-(K[j]-1)*H)*.50/H+
+                            (TP[j]-(K[j]-1)*H)^2*.50/H^2-(TP[j]-(K[j]-1)*H)^3*.50/H^3
+                        else if(K[j]-i+3==3) then 1.0/6.0+(K[j]*H-TP[j])*.50/H+
+                            (K[j]*H-TP[j])^2*.50/H^2-(K[j]*H-TP[j])^3*.50/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])^3/6.0/H^3;
+param VI1{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)^2/2.0/H^3
+                        else if(K[j]-i+3==2) then  .50/H+(TP[j]-(K[j]-1)*H)/H^2-    
+                            (TP[j]-(K[j]-1)*H)^2*1.50/H^3
+                        else if(K[j]-i+3==3) then -.50/H-(K[j]*H-TP[j])/H^2+
+                            (K[j]*H-TP[j])^2*1.50/H^3
+                        else if(K[j]-i+3==4) then -(K[j]*H-TP[j])^2/2.0/H^3;
+param VI2{j in 1..M,i in 1..N}:=if(i <=K[j]-2) then 0 
+                        else if(i >= K[j]+3) then 0 
+                        else if(K[j]-i+3==1) then  (TP[j]-(K[j]-1)*H)/H^3
+                        else if(K[j]-i+3==2) then  1.0/H^2-(TP[j]-(K[j]-1)*H)*3.0/H^3
+                        else if(K[j]-i+3==3) then 1.0/H^2-(K[j]*H-TP[j])*3.0/H^3
+                        else if(K[j]-i+3==4) then (K[j]*H-TP[j])/H^3;
+param C11;
+param C12;
+param C13;
+param C21;
+param C22;
+param C23;
+param C31;
+param C32;
+param C33;
+param V11{i in 1..M}:=1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V12{i in 1..M}:=1.5*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V13{i in 1..M}:=1.5*((360*TP[i]-360)*TP[i]+60);
+param V21{i in 1..M}:=-.5*(cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1));
+param V22{i in 1..M}:=-.5*(-sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                       (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^2+
+                        cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*4.7*
+                        60*TP[i]*((2*TP[i]-3)*TP[i]+1));
+param V23{i in 1..M}:=-.5*(-cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                        (4.7*30*TP[i]^2*((TP[i]-2)*TP[i]+1))^3-
+                         sin(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*3*4.7^2*
+                         30*TP[i]^2*((TP[i]-2)*TP[i]+1)*60*TP[i]*((2*TP[i]-3)*TP[i]+1)+
+                          cos(4.7*TP[i]^3*((6*TP[i]-15)*TP[i]+10))*
+                          ((360*TP[i]-360)*TP[i]+60)*4.7);
+param V31{i in 1..M}:=-1.3*30*TP[i]^2*((TP[i]-2)*TP[i]+1);
+param V32{i in 1..M}:=-1.3*60*TP[i]*((2*TP[i]-3)*TP[i]+1);
+param V33{i in 1..M}:=-1.3*((360*TP[i]-360)*TP[i]+60);
+var X{1..N}:=1.920426464080810;
+var SUM{i in 1..M}=sum{j in 1..N}VI[i,j]*X[j];
+var SUM1{i in 1..M}=sum{j in 1..N}VI1[i,j]*X[j];
+var SUM2{i in 1..M}=sum{j in 1..N}VI2[i,j]*X[j];
+minimize obj: sum{i in 1..N}BB[i]*X[i];
+s.t. gx1{i in 1..M}: C11*SUM[i]-V11[i]>=0;
+s.t. gx2{i in 1..M}: C11*SUM[i]+V11[i]>=0;
+s.t. gx3{i in 1..M}: C12*SUM[i]^3-(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx4{i in 1..M}: C12*SUM[i]^3+(V12[i]*SUM[i]-V11[i]*SUM1[i])>=0;
+s.t. gx5{i in 1..M}: C13*SUM[i]^5-(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx6{i in 1..M}: C13*SUM[i]^5+(V13[i]*SUM[i]^2-3.0*V12[i]*SUM[i]*SUM1[i]+
+                     3.0*V11[i]*SUM1[i]^2+V11[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx7{i in 1..M}: C21*SUM[i]-V21[i]>=0;
+s.t. gx8{i in 1..M}: C21*SUM[i]+V21[i]>=0;
+s.t. gx9{i in 1..M}: C22*SUM[i]^3-(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx10{i in 1..M}: C22*SUM[i]^3+(V22[i]*SUM[i]-V21[i]*SUM1[i])>=0;
+s.t. gx11{i in 1..M}: C23*SUM[i]^5-(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx12{i in 1..M}: C23*SUM[i]^5+(V23[i]*SUM[i]^2-3.0*V22[i]*SUM[i]*SUM1[i]+
+                      3.0*V21[i]*SUM1[i]^2+V21[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx13{i in 1..M}: C31*SUM[i]-V31[i]>=0;
+s.t. gx14{i in 1..M}: C31*SUM[i]+V31[i]>=0;
+s.t. gx15{i in 1..M}: C32*SUM[i]^3-(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx16{i in 1..M}: C32*SUM[i]^3+(V32[i]*SUM[i]-V31[i]*SUM1[i])>=0;
+s.t. gx17{i in 1..M}: C33*SUM[i]^5-(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+s.t. gx18{i in 1..M}: C33*SUM[i]^5+(V33[i]*SUM[i]^2-3.0*V32[i]*SUM[i]*SUM1[i]+
+                        3.0*V31[i]*SUM1[i]^2+V31[i]*SUM[i]*SUM2[i])>=0;
+
+
+data;
+param N:=1001;
+param M:=4001;
+param C11:=2;
+param C12:=8;
+param C13:=25;
+param C21:=3;
+param C22:=18;
+param C23:=65;
+param C31:=4;
+param C32:=50;
+param C33:=100;
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 22
+Salve a resposta completa em: respostas_claude/lote_22_resposta.txt
+================================================================

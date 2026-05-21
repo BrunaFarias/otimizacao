@@ -1,0 +1,137 @@
+### lukvle18.jl
+
+using JuMP
+
+model = Model()
+
+n = 249997
+@variable(model, x[1:n], start=2.0)
+
+@objective(model, Min,
+    sum((x[4*i-3]-x[4*i-2])^4 + (x[4*i-2]+x[4*i-1]-2)^2 + (x[4*i]-1)^2 + (x[4*i+1]-1)^2
+        for i in 1:div(n-1,4))
+)
+
+@constraint(model, eq[k in 1:3*div(n-1,4)],
+    k % 3 == 1 ?
+    x[4*div(k-1,3)+1]^2 + 3*x[4*div(k-1,3)+2] == 0 :
+    (k % 3 == 2 ?
+    x[4*div(k-1,3)+3]^2 + x[4*div(k-1,3)+4] - 2*x[4*div(k-1,3)+5] == 0 :
+    x[4*div(k-1,3)+2]^2 - x[4*div(k-1,3)+5] == 0)
+)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### lukvle4.jl
+
+using JuMP
+
+model = Model()
+
+n = 250000
+x_init = [i % 4 == 1 ? 1.0 : 2.0 for i in 1:n+2]
+
+@variable(model, x[1:n+2])
+for i in 1:n+2; set_start_value(x[i], x_init[i]); end
+
+@objective(model, Min,
+    sum((exp(x[2*i-1])-x[2*i])^4 + 100*(x[2*i]-x[2*i+1])^6 +
+        (tan(x[2*i+1]-x[2*i+2]))^4 + x[2*i-1]^8 + (x[2*i+2]-1)^2
+        for i in 1:div(n,2))
+)
+
+@constraint(model, eq[i in 1:n-2],
+    8*x[i+1]*(x[i+1]^2-x[i]) - 2*(1-x[i+1]) + 4*(x[i+1]-x[i+2]^2) == 0)
+
+fix(x[n+1], 0.0; force=true)
+fix(x[n+2], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### lukvle5.jl
+
+using JuMP
+
+model = Model()
+
+n = 250000
+x_init = [i > 0 && i < n+1 ? -1.0 : 0.0 for i in 0:n+1]
+
+@variable(model, x[0:n+1])
+for i in 0:n+1; set_start_value(x[i], x_init[i+1]); end
+
+@objective(model, Min,
+    sum(abs((3-2*x[i])*x[i]-x[i-1]-x[i+1]+1)^(7/3) for i in 1:n)
+)
+
+@constraint(model, eq[i in 1:n-4],
+    8*x[i+2]*(x[i+2]^2-x[i+1]) - 2*(1-x[i+2]) + 4*(x[i+2]-x[i+3]^2) +
+    x[i+1]^2 - x[i] + x[i+3] - x[i+4]^2 == 0)
+
+fix(x[0], 0.0; force=true)
+fix(x[n+1], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### lukvle6.jl
+
+using JuMP
+
+model = Model()
+
+n = 249999
+@variable(model, x[1:n+1], start=3.0)
+
+@objective(model, Min,
+    sum(abs((2+5*x[i]^2)*x[i] + 1 + sum(x[j]*(1+x[j]) for j in max(i-5,1):min(i+1,n)))^(7/3)
+        for i in 1:n)
+)
+
+@constraint(model, eq[i in 1:div(n,2)],
+    4*x[2*i] - (x[2*i-1]-x[2*i+1])*exp(x[2*i-1]-x[2*i]-x[2*i+1]) - 3 == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### lukvle7.jl
+
+using JuMP
+
+model = Model()
+
+n = 250000
+x_init = [i >= 1 && i <= n ? 1.0 : 0.0 for i in 0:n+1]
+
+@variable(model, x[0:n+1])
+for i in 0:n+1; set_start_value(x[i], x_init[i+1]); end
+
+@objective(model, Min,
+    sum(i*(1-cos(x[i])+sin(x[i-1])-sin(x[i+1])) for i in 1:n)
+)
+
+@constraint(model, eq1, 4*(x[1]-x[2]^2)+x[2]-x[3]^2 == 0)
+@constraint(model, eq2, 8*x[2]*(x[2]^2-x[1])-2*(1-x[2])+4*(x[2]-x[3]^2)+x[3]-x[4]^2 == 0)
+@constraint(model, eq3, 8*x[n-1]*(x[n-1]^2-x[n-2])-2*(1-x[n])+4*(x[n-1]-x[n]^2)+x[n-2]^2-x[n-3] == 0)
+@constraint(model, eq4, 8*x[n]*(x[n]^2-x[n-1])-2*(1-x[n])+x[n-1]^2-x[n-2] == 0)
+
+fix(x[0], 0.0; force=true)
+fix(x[n+1], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

@@ -1,0 +1,233 @@
+================================================================
+LOTE 07 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [ex1_320.mod]
+
+# this is example 1 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 319;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param n4 := n*4;
+param a := 0.001;
+
+param z{i in 1..n, j in 1..n} := 1 + 2 * (i*h*(i*h-1)+j*h*(j*h-1));
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2};
+#var x{i in 1..n2} := 3;
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]-h2*(x[i] - x[i]^3 + u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= 1.5;
+s.t. ubndx{i in 1..n2}: u[i] <= 4.5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= 0;
+s.t. ubndy{i in 1..n2}: x[i] <= .185;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex2_160.mod]
+
+# this is example 2 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 159;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param n4 := n*4;
+param a := 0.0;
+
+param z{i in 1..n, j in 1..n} := 1 + 2 * (i*h*(i*h-1)+j*h*(j*h-1));
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2};
+#var x{i in 1..n2} := 3;
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]-h2*(x[i] - x[i]^3 + u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= 1.5;
+s.t. ubndx{i in 1..n2}: u[i] <= 4.5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= 0;
+s.t. ubndy{i in 1..n2}: x[i] <= .185;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex2_320.mod]
+
+# this is example 2 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 319;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param n4 := n*4;
+param a := 0.0;
+
+param z{i in 1..n, j in 1..n} := 1 + 2 * (i*h*(i*h-1)+j*h*(j*h-1));
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2};
+#var x{i in 1..n2} := 3;
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]-h2*(x[i] - x[i]^3 + u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= 1.5;
+s.t. ubndx{i in 1..n2}: u[i] <= 4.5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= 0;
+s.t. ubndy{i in 1..n2}: x[i] <= .185;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex3_160.mod]
+
+# this is example 3 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 159;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param a := .001;
+param pi := 4*atan(1);
+
+param z{i in 1..n, j in 1..n} := sin(2*pi*i*h)*sin(2*pi*j*h);
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2} := z[int((i-1)/n)+1,i-(int((i-1)/n))*n];
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]+h2*(- exp(x[i]) - u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= -5;
+s.t. ubndx{i in 1..n2}: u[i] <= 5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= -10;
+s.t. ubndy{i in 1..n2}: x[i] <= .11;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex3_320.mod]
+
+# this is example 3 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 319;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param a := .001;
+param pi := 4*atan(1);
+
+param z{i in 1..n, j in 1..n} := sin(2*pi*i*h)*sin(2*pi*j*h);
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2} := z[int((i-1)/n)+1,i-(int((i-1)/n))*n];
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]+h2*(- exp(x[i]) - u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= -5;
+s.t. ubndx{i in 1..n2}: u[i] <= 5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= -10;
+s.t. ubndy{i in 1..n2}: x[i] <= .11;
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 07
+Salve a resposta completa em: respostas_claude/lote_07_resposta.txt
+================================================================

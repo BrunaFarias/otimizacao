@@ -1,0 +1,170 @@
+### dtoc1nd.jl
+
+using JuMP
+
+model = Model()
+
+n_t = 150
+nx = 15
+ny = 25
+mu_v = 1.0
+
+b_mat = [(i-j)/(nx+ny) for i in 1:ny, j in 1:nx]
+c_mat = [(i+j)*mu_v/(nx+ny) for i in 1:ny, j in 1:nx]
+
+@variable(model, x_v[1:n_t-1, 1:nx])
+@variable(model, y_v[1:n_t, 1:ny])
+
+for i in 1:ny
+    fix(y_v[1,i], 0.0; force=true)
+end
+
+@objective(model, Min,
+    sum((x_v[t,i]+0.5)^4 for t in 1:n_t-1, i in 1:nx) +
+    sum((y_v[t,i]+0.25)^4 for t in 1:n_t, i in 1:ny)
+)
+
+@constraint(model, cons1[t in 1:n_t-1],
+    sum(c_mat[div(k,nx)+1, k-nx*div(k,nx)+1] * y_v[t,div(k,nx)+1] * x_v[t,k-nx*div(k,nx)+1] for k in 0:ny*nx-1) +
+    0.5*y_v[t,1] + 0.25*y_v[t,2] - y_v[t+1,1] +
+    sum(b_mat[1,i]*x_v[t,i] for i in 1:nx) == 0)
+
+@constraint(model, cons2[t in 1:n_t-1, j in 2:ny-1],
+    sum(c_mat[div(k,nx)+1, k-nx*div(k,nx)+1] * y_v[t,div(k,nx)+1] * x_v[t,k-nx*div(k,nx)+1] for k in 0:ny*nx-1) -
+    y_v[t+1,j] + 0.5*y_v[t,j] - 0.25*y_v[t,j-1] + 0.25*y_v[t,j+1] +
+    sum(b_mat[j,i]*x_v[t,i] for i in 1:nx) == 0)
+
+@constraint(model, cons3[t in 1:n_t-1],
+    sum(c_mat[div(k,nx)+1, k-nx*div(k,nx)+1] * y_v[t,div(k,nx)+1] * x_v[t,k-nx*div(k,nx)+1] for k in 0:ny*nx-1) +
+    0.5*y_v[t,ny] - 0.25*y_v[t,ny-1] - y_v[t+1,ny] +
+    sum(b_mat[ny,i]*x_v[t,i] for i in 1:nx) == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### dtoc2.jl
+
+using JuMP
+
+model = Model()
+
+n_t = 1300
+nx = 20
+ny = 30
+c_mat = [(i+j)/(2*ny) for i in 1:ny, j in 1:nx]
+
+@variable(model, x_v[1:n_t-1, 1:nx])
+@variable(model, y_v[1:n_t, 1:ny])
+
+for i in 1:ny
+    fix(y_v[1,i], i/(2.0*ny); force=true)
+end
+
+@objective(model, Min,
+    sum((sum(y_v[t,j]^2 for j in 1:ny)) * ((sin(0.5*sum(x_v[t,j]^2 for j in 1:nx)))^2 + 1.0) for t in 1:n_t-1) +
+    sum(y_v[n_t,j]^2 for j in 1:ny)
+)
+
+@constraint(model, cons[t in 1:n_t-1, j in 1:ny],
+    sin(y_v[t,j]) + sum(c_mat[j,i]*sin(x_v[t,i]) for i in 1:nx) - y_v[t+1,j] == 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### elec_200.jl
+
+using JuMP
+
+model = Model()
+
+np = 200
+
+@variable(model, x_e[1:np])
+@variable(model, y_e[1:np])
+@variable(model, z_e[1:np])
+
+@objective(model, Min,
+    sum(1.0/sqrt((x_e[i]-x_e[j])^2 + (y_e[i]-y_e[j])^2 + (z_e[i]-z_e[j])^2)
+        for i in 1:np-1, j in i+1:np)
+)
+
+@constraint(model, on_sphere[i in 1:np], x_e[i]^2 + y_e[i]^2 + z_e[i]^2 == 1)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### elec_400.jl
+
+using JuMP
+
+model = Model()
+
+np = 400
+
+@variable(model, x_e[1:np])
+@variable(model, y_e[1:np])
+@variable(model, z_e[1:np])
+
+@objective(model, Min,
+    sum(1.0/sqrt((x_e[i]-x_e[j])^2 + (y_e[i]-y_e[j])^2 + (z_e[i]-z_e[j])^2)
+        for i in 1:np-1, j in i+1:np)
+)
+
+@constraint(model, on_sphere[i in 1:np], x_e[i]^2 + y_e[i]^2 + z_e[i]^2 == 1)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex1_160.jl
+
+using JuMP
+
+model = Model()
+
+n = 159
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.001
+
+z_param = [1 + 2*(i*h_val*(i*h_val-1)+j*h_val*(j*h_val-1)) for i in 1:n, j in 1:n]
+
+@variable(model, x_v[1:n2])
+@variable(model, u_v[1:n2])
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) - h2*(x_v[idx] - x_v[idx]^3 + u_v[idx]) == 0)
+end
+
+@constraint(model, lbndx[i in 1:n2], u_v[i] >= 1.5)
+@constraint(model, ubndx[i in 1:n2], u_v[i] <= 4.5)
+@constraint(model, lbndy[i in 1:n2], x_v[i] >= 0)
+@constraint(model, ubndy[i in 1:n2], x_v[i] <= 0.185)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

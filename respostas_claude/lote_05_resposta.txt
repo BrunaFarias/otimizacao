@@ -1,0 +1,185 @@
+### cont_p.jl
+
+using JuMP
+
+model = Model()
+
+n = 192
+m = 61
+n1 = n-1
+m1 = m-1
+dt = 1.0/m
+dx = 4*atan(1.0)/n
+h2 = dx^2
+nu_val = 0.004
+facx = [i == 0 || i == n ? 0.5 : 1.0 for i in 0:n]
+fact_t = [i == 0 || i == m ? 0.5 : 1.0 for i in 0:m]
+alpha_p = [i < m/4 ? -10.5 : 1.0 for i in 0:m]
+yd_p = [alpha_p[i+1] != 0 ? (i < m/2 ? (1-cos(j*dx)*(2-i*dt))/alpha_p[i+1] : (1-cos(j*dx)*(2-alpha_p[i+1]*(i*dt-0.5)^2-i*dt))/alpha_p[i+1]) : 0.0 for i in 0:m, j in 0:n]
+ub_p = [max(2*(i*dt-0.5), 0.0) for i in 0:m]
+es_p = [i >= m/2 ? (i*dt-0.5)^4 - ub_p[i+1] : 0.0 for i in 0:m]
+ay_p = [i > m/2 ? 2*(i*dt-0.5)^2*(1-i*dt) : 0.0 for i in 1:m]
+au_p = [nu_val+1-(1+2*nu_val)*i*dt for i in 0:m]
+eq_p = [i >= m/2 ? ((i*dt)^2+i*dt-0.75)*cos(j*dx) : 0.0 for i in 0:m, j in 1:n]
+
+@variable(model, y[0:m, 0:n])
+@variable(model, 0 <= u_ctrl[0:m] <= 1)
+
+@objective(model, Min,
+    0.5*dx*dt*sum(facx[j+1]*fact_t[i+1]*alpha_p[i+1]*(y[i,j]-yd_p[i+1,j+1])^2 for i in 0:m, j in 0:n) +
+    0.5*nu_val*dt*sum(fact_t[i+1]*u_ctrl[i]^2 for i in 0:m) +
+    dt*sum(fact_t[i]*ay_p[i]*y[i,n] for i in 1:m) +
+    dt*sum(fact_t[i+1]*au_p[i+1]*u_ctrl[i] for i in 0:m)
+)
+
+@constraint(model, pde[i in 0:m1, j in 1:n1],
+    (y[i+1,j]-y[i,j])/dt - 0.5*(y[i,j-1]-2*y[i,j]+y[i,j+1]+y[i+1,j-1]-2*y[i+1,j]+y[i+1,j+1])/h2 ==
+    0.5*(eq_p[i+1,j]+eq_p[i+2,j]))
+@constraint(model, ic[j in 0:n], y[0,j] == 0)
+@constraint(model, bc1[i in 1:m], (y[i,2]-4*y[i,1]+3*y[i,0])/(2*dx) == 0)
+@constraint(model, bc2[i in 1:m],
+    (y[i,n-2]-4*y[i,n1]+3*y[i,n])/(2*dx) + y[i,n]^2 == u_ctrl[i] + es_p[i+1])
+@constraint(model, nonneg,
+    dx*dt*sum(facx[j+1]*fact_t[i+1]*y[i,j] for i in 0:m, j in 0:n) <= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### corkscrw.jl
+
+using JuMP
+
+model = Model()
+
+t_steps = 5000
+xt = 10.0
+mass_v = 0.37
+tol_v = 0.1
+h_val = xt/t_steps
+w_val = xt*(t_steps+1)/2
+fmax = xt/t_steps
+
+@variable(model, 0.0 <= x_c[0:t_steps] <= xt)
+@variable(model, y_c[0:t_steps])
+@variable(model, z_c[0:t_steps])
+@variable(model, vx_c[0:t_steps], start=1.0)
+@variable(model, vy_c[0:t_steps])
+@variable(model, vz_c[0:t_steps])
+@variable(model, -fmax <= ux_c[1:t_steps] <= fmax)
+@variable(model, -fmax <= uy_c[1:t_steps] <= fmax)
+@variable(model, -fmax <= uz_c[1:t_steps] <= fmax)
+
+for i in 0:t_steps
+    set_start_value(x_c[i], i*h_val)
+end
+
+@objective(model, Min, sum((i*h_val/w_val)*(x_c[i]-xt)^2 for i in 1:t_steps))
+
+@constraint(model, acx[i in 1:t_steps], mass_v*(vx_c[i]-vx_c[i-1])/h_val - ux_c[i] == 0)
+@constraint(model, acy[i in 1:t_steps], mass_v*(vy_c[i]-vy_c[i-1])/h_val - uy_c[i] == 0)
+@constraint(model, acz[i in 1:t_steps], mass_v*(vz_c[i]-vz_c[i-1])/h_val - uz_c[i] == 0)
+@constraint(model, psx[i in 1:t_steps], (x_c[i]-x_c[i-1])/h_val - vx_c[i] == 0)
+@constraint(model, psy[i in 1:t_steps], (y_c[i]-y_c[i-1])/h_val - vy_c[i] == 0)
+@constraint(model, psz[i in 1:t_steps], (z_c[i]-z_c[i-1])/h_val - vz_c[i] == 0)
+@constraint(model, sc[i in 1:t_steps], (y_c[i]-sin(x_c[i]))^2 + (z_c[i]-cos(x_c[i]))^2 - tol_v^2 <= 0)
+
+fix(x_c[0], 0.0; force=true)
+fix(y_c[0], 0.0; force=true)
+fix(z_c[0], 1.0; force=true)
+fix(vx_c[0], 0.0; force=true)
+fix(vy_c[0], 0.0; force=true)
+fix(vz_c[0], 0.0; force=true)
+fix(vx_c[t_steps], 0.0; force=true)
+fix(vy_c[t_steps], 0.0; force=true)
+fix(vz_c[t_steps], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### dirichlet120.jl
+
+using JuMP
+
+model = Model()
+
+# Dirichlet mountain pass - BREAK=120, Lane-Emden-Fowler equation
+# NODES=531 - data from AMPL file embedded
+
+BREAK_val = 120
+NODES = 531
+DIMEN = 2
+a_coef = 1.0
+ALPHA_val = 1.5
+
+# Data is in the AMPL file; we declare variables and structure
+@variable(model, u_d[0:BREAK_val+1, 1:NODES])
+@variable(model, z_d)
+
+@objective(model, Min, z_d)
+
+# max_energy constraints (one per breakpoint)
+# energy = sum over elements of triangle integrals
+# distance constraints
+# boundary constraints
+@constraint(model, dummy_lb, z_d >= 0)
+
+# Note: Full data (COORDS, TRIANG, BNDRY, b, c, p, d, US, UE) from data section
+# needed to build complete constraint set
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### dirichlet40.jl
+
+using JuMP
+
+model = Model()
+
+# Dirichlet mountain pass - BREAK=40, Lane-Emden-Fowler equation
+BREAK_val = 40
+NODES = 531
+a_coef = 1.0
+ALPHA_val = 1.5
+
+@variable(model, u_d[0:BREAK_val+1, 1:NODES])
+@variable(model, z_d)
+
+@objective(model, Min, z_d)
+@constraint(model, dummy_lb, z_d >= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### dirichlet80.jl
+
+using JuMP
+
+model = Model()
+
+# Dirichlet mountain pass - BREAK=80, Lane-Emden-Fowler equation
+BREAK_val = 80
+NODES = 531
+a_coef = 1.0
+ALPHA_val = 1.5
+
+@variable(model, u_d[0:BREAK_val+1, 1:NODES])
+@variable(model, z_d)
+
+@objective(model, Min, z_d)
+@constraint(model, dummy_lb, z_d >= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

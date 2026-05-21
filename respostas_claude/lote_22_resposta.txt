@@ -1,0 +1,237 @@
+### robot_1600.jl
+
+using JuMP
+
+model = Model()
+
+pi_val = 3.14159
+nh = 1600
+L = 5.0
+max_u_rho = 1.0; max_u_the = 1.0; max_u_phi = 1.0
+
+@variable(model, 0 <= rho[0:nh] <= L)
+@variable(model, -pi_val <= the[0:nh] <= pi_val)
+@variable(model, 0 <= phi[0:nh] <= pi_val)
+@variable(model, rho_dot[0:nh])
+@variable(model, the_dot[0:nh])
+@variable(model, phi_dot[0:nh])
+@variable(model, -max_u_rho <= u_rho[0:nh] <= max_u_rho)
+@variable(model, -max_u_the <= u_the[0:nh] <= max_u_the)
+@variable(model, -max_u_phi <= u_phi[0:nh] <= max_u_phi)
+@variable(model, step >= 0)
+@variable(model, tf)
+
+for k in 0:nh
+    set_start_value(rho[k], 4.5)
+    set_start_value(the[k], (2*pi_val/3)*(k/nh)^2)
+    set_start_value(phi[k], pi_val/4)
+    set_start_value(rho_dot[k], 0.0)
+    set_start_value(the_dot[k], (4*pi_val/3)*(k/nh))
+    set_start_value(phi_dot[k], 0.0)
+    set_start_value(u_rho[k], 0.0)
+    set_start_value(u_the[k], 0.0)
+    set_start_value(u_phi[k], 0.0)
+end
+set_start_value(step, 1.0/nh)
+
+@objective(model, Min, tf)
+@constraint(model, tf_eqn, tf == step*nh)
+
+I_the = [(((L-rho[i])^3+rho[i]^3)*(sin(phi[i]))^2/3.0) for i in 0:nh]
+I_phi = [(((L-rho[i])^3+rho[i]^3)/3.0) for i in 0:nh]
+
+@constraint(model, rho_eqn[j in 1:nh], rho[j] == rho[j-1] + 0.5*step*(rho_dot[j]+rho_dot[j-1]))
+@constraint(model, the_eqn[j in 1:nh], the[j] == the[j-1] + 0.5*step*(the_dot[j]+the_dot[j-1]))
+@constraint(model, phi_eqn[j in 1:nh], phi[j] == phi[j-1] + 0.5*step*(phi_dot[j]+phi_dot[j-1]))
+@constraint(model, u_rho_eqn[j in 1:nh], rho_dot[j] == rho_dot[j-1] + 0.5*step*(u_rho[j]+u_rho[j-1])/L)
+@constraint(model, u_the_eqn[j in 1:nh],
+    the_dot[j] == the_dot[j-1] + 0.5*step*(u_the[j]/I_the[j+1] + u_the[j-1]/I_the[j]))
+@constraint(model, u_phi_eqn[j in 1:nh],
+    phi_dot[j] == phi_dot[j-1] + 0.5*step*(u_phi[j]/I_phi[j+1] + u_phi[j-1]/I_phi[j]))
+
+fix(rho[0], 4.5; force=true); fix(the[0], 0.0; force=true); fix(phi[0], pi_val/4; force=true)
+fix(rho[nh], 4.5; force=true); fix(the[nh], 2*pi_val/3; force=true); fix(phi[nh], pi_val/4; force=true)
+fix(rho_dot[0], 0.0; force=true); fix(the_dot[0], 0.0; force=true); fix(phi_dot[0], 0.0; force=true)
+fix(rho_dot[nh], 0.0; force=true); fix(the_dot[nh], 0.0; force=true); fix(phi_dot[nh], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### robot_800.jl
+
+using JuMP
+
+model = Model()
+
+pi_val = 3.14159
+nh = 800
+L = 5.0
+max_u_rho = 1.0; max_u_the = 1.0; max_u_phi = 1.0
+
+@variable(model, 0 <= rho[0:nh] <= L)
+@variable(model, -pi_val <= the[0:nh] <= pi_val)
+@variable(model, 0 <= phi[0:nh] <= pi_val)
+@variable(model, rho_dot[0:nh]); @variable(model, the_dot[0:nh]); @variable(model, phi_dot[0:nh])
+@variable(model, -max_u_rho <= u_rho[0:nh] <= max_u_rho)
+@variable(model, -max_u_the <= u_the[0:nh] <= max_u_the)
+@variable(model, -max_u_phi <= u_phi[0:nh] <= max_u_phi)
+@variable(model, step >= 0); @variable(model, tf)
+
+set_start_value(step, 1.0/nh)
+for k in 0:nh
+    set_start_value(rho[k], 4.5); set_start_value(the[k], (2*pi_val/3)*(k/nh)^2)
+    set_start_value(phi[k], pi_val/4); set_start_value(the_dot[k], (4*pi_val/3)*(k/nh))
+end
+
+@objective(model, Min, tf)
+@constraint(model, tf_eqn, tf == step*nh)
+I_the = [(((L-rho[i])^3+rho[i]^3)*(sin(phi[i]))^2/3.0) for i in 0:nh]
+I_phi = [(((L-rho[i])^3+rho[i]^3)/3.0) for i in 0:nh]
+@constraint(model, rho_eqn[j in 1:nh], rho[j] == rho[j-1] + 0.5*step*(rho_dot[j]+rho_dot[j-1]))
+@constraint(model, the_eqn[j in 1:nh], the[j] == the[j-1] + 0.5*step*(the_dot[j]+the_dot[j-1]))
+@constraint(model, phi_eqn[j in 1:nh], phi[j] == phi[j-1] + 0.5*step*(phi_dot[j]+phi_dot[j-1]))
+@constraint(model, u_rho_eqn[j in 1:nh], rho_dot[j] == rho_dot[j-1] + 0.5*step*(u_rho[j]+u_rho[j-1])/L)
+@constraint(model, u_the_eqn[j in 1:nh], the_dot[j] == the_dot[j-1] + 0.5*step*(u_the[j]/I_the[j+1]+u_the[j-1]/I_the[j]))
+@constraint(model, u_phi_eqn[j in 1:nh], phi_dot[j] == phi_dot[j-1] + 0.5*step*(u_phi[j]/I_phi[j+1]+u_phi[j-1]/I_phi[j]))
+fix(rho[0], 4.5; force=true); fix(the[0], 0.0; force=true); fix(phi[0], pi_val/4; force=true)
+fix(rho[nh], 4.5; force=true); fix(the[nh], 2*pi_val/3; force=true); fix(phi[nh], pi_val/4; force=true)
+fix(rho_dot[0], 0.0; force=true); fix(the_dot[0], 0.0; force=true); fix(phi_dot[0], 0.0; force=true)
+fix(rho_dot[nh], 0.0; force=true); fix(the_dot[nh], 0.0; force=true); fix(phi_dot[nh], 0.0; force=true)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### robot_a.jl
+
+using JuMP
+
+model = Model()
+
+# Robot design problem - Ecker & Kuperschmid & Marin
+N_rb = 1001
+M_rb = 4001
+H_rb = 1/(N_rb-1)
+TP = [(i-1)/(M_rb-1) for i in 1:M_rb]
+K = [round(Int, TP[i]/H_rb + 1e-6 + 1) for i in 1:M_rb]
+BB = [i==1 ? 0.5*H_rb : (i==2 ? 23*H_rb/24 : (i==N_rb ? 0.5*H_rb : (i==N_rb-1 ? 23*H_rb/24 : H_rb))) for i in 1:N_rb]
+
+C11=2.0; C12=8.0; C13=250.0
+C21=3.0; C22=18.0; C23=650.0
+C31=4.0; C32=50.0; C33=1000.0
+
+# Spline basis functions
+function VI_val(j, i, TP, K, H)
+    k = K[j]
+    d = k - i + 3
+    t = TP[j] - (k-1)*H
+    if i <= k-2 || i >= k+3; return 0.0; end
+    d == 1 && return t^3/(6*H^3)
+    d == 2 && return 1/6 + t*0.5/H + t^2*0.5/H^2 - t^3*0.5/H^3
+    d == 3 && return 1/6 + (k*H-TP[j])*0.5/H + (k*H-TP[j])^2*0.5/H^2 - (k*H-TP[j])^3*0.5/H^3
+    d == 4 && return (k*H-TP[j])^3/(6*H^3)
+    return 0.0
+end
+
+VI = [VI_val(j, i, TP, K, H_rb) for j in 1:M_rb, i in 1:N_rb]
+VI1 = zeros(M_rb, N_rb)  # derivatives
+VI2 = zeros(M_rb, N_rb)  # second derivatives
+
+V11 = [1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1) for i in 1:M_rb]
+V12 = [1.5*60*TP[i]*((2*TP[i]-3)*TP[i]+1) for i in 1:M_rb]
+V13 = [1.5*((360*TP[i]-360)*TP[i]+60) for i in 1:M_rb]
+V31 = [-1.3*30*TP[i]^2*((TP[i]-2)*TP[i]+1) for i in 1:M_rb]
+V32 = [-1.3*60*TP[i]*((2*TP[i]-3)*TP[i]+1) for i in 1:M_rb]
+V33 = [-1.3*((360*TP[i]-360)*TP[i]+60) for i in 1:M_rb]
+
+@variable(model, X_rb[1:N_rb], start=1.491400623321533)
+
+SUM_rb = [sum(VI[i,j]*X_rb[j] for j in 1:N_rb) for i in 1:M_rb]
+
+@objective(model, Min, sum(BB[i]*X_rb[i] for i in 1:N_rb))
+
+@constraint(model, gx1[i in 1:M_rb], C11*SUM_rb[i] - V11[i] >= 0)
+@constraint(model, gx2[i in 1:M_rb], C11*SUM_rb[i] + V11[i] >= 0)
+@constraint(model, gx13[i in 1:M_rb], C31*SUM_rb[i] - V31[i] >= 0)
+@constraint(model, gx14[i in 1:M_rb], C31*SUM_rb[i] + V31[i] >= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### robot_b.jl
+
+using JuMP
+
+model = Model()
+
+# Robot design problem - case b (C values differ)
+N_rb = 1001; M_rb = 4001; H_rb = 1/(N_rb-1)
+TP = [(i-1)/(M_rb-1) for i in 1:M_rb]
+K = [round(Int, TP[i]/H_rb + 1e-6 + 1) for i in 1:M_rb]
+BB = [i==1 ? 0.5*H_rb : (i==2 ? 23*H_rb/24 : (i==N_rb ? 0.5*H_rb : (i==N_rb-1 ? 23*H_rb/24 : H_rb))) for i in 1:N_rb]
+
+C11=1.0; C12=3.0; C13=100.0; C21=1.0; C22=3.0; C23=100.0; C31=1.0; C32=3.0; C33=100.0
+
+function VI_val(j, i, TP, K, H)
+    k = K[j]; d = k - i + 3; t = TP[j] - (k-1)*H
+    if i <= k-2 || i >= k+3; return 0.0; end
+    d == 1 && return t^3/(6*H^3); d == 2 && return 1/6 + t*0.5/H + t^2*0.5/H^2 - t^3*0.5/H^3
+    d == 3 && return 1/6 + (k*H-TP[j])*0.5/H + (k*H-TP[j])^2*0.5/H^2 - (k*H-TP[j])^3*0.5/H^3
+    d == 4 && return (k*H-TP[j])^3/(6*H^3); return 0.0
+end
+VI = [VI_val(j, i, TP, K, H_rb) for j in 1:M_rb, i in 1:N_rb]
+V11 = [1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1) for i in 1:M_rb]
+
+@variable(model, X_rb[1:N_rb], start=4.377146244049071)
+SUM_rb = [sum(VI[i,j]*X_rb[j] for j in 1:N_rb) for i in 1:M_rb]
+@objective(model, Min, sum(BB[i]*X_rb[i] for i in 1:N_rb))
+@constraint(model, gx1[i in 1:M_rb], C11*SUM_rb[i] - V11[i] >= 0)
+@constraint(model, gx2[i in 1:M_rb], C11*SUM_rb[i] + V11[i] >= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### robot_c.jl
+
+using JuMP
+
+model = Model()
+
+# Robot design problem - case c
+N_rb = 1001; M_rb = 4001; H_rb = 1/(N_rb-1)
+TP = [(i-1)/(M_rb-1) for i in 1:M_rb]
+K = [round(Int, TP[i]/H_rb + 1e-6 + 1) for i in 1:M_rb]
+BB = [i==1 ? 0.5*H_rb : (i==2 ? 23*H_rb/24 : (i==N_rb ? 0.5*H_rb : (i==N_rb-1 ? 23*H_rb/24 : H_rb))) for i in 1:N_rb]
+
+C11=2.0; C12=8.0; C13=25.0; C21=3.0; C22=18.0; C23=65.0; C31=4.0; C32=50.0; C33=100.0
+
+function VI_val(j, i, TP, K, H)
+    k = K[j]; d = k - i + 3; t = TP[j] - (k-1)*H
+    if i <= k-2 || i >= k+3; return 0.0; end
+    d == 1 && return t^3/(6*H^3); d == 2 && return 1/6 + t*0.5/H + t^2*0.5/H^2 - t^3*0.5/H^3
+    d == 3 && return 1/6 + (k*H-TP[j])*0.5/H + (k*H-TP[j])^2*0.5/H^2 - (k*H-TP[j])^3*0.5/H^3
+    d == 4 && return (k*H-TP[j])^3/(6*H^3); return 0.0
+end
+VI = [VI_val(j, i, TP, K, H_rb) for j in 1:M_rb, i in 1:N_rb]
+V11 = [1.5*30*TP[i]^2*((TP[i]-2)*TP[i]+1) for i in 1:M_rb]
+
+@variable(model, X_rb[1:N_rb], start=1.920426464080810)
+SUM_rb = [sum(VI[i,j]*X_rb[j] for j in 1:N_rb) for i in 1:M_rb]
+@objective(model, Min, sum(BB[i]*X_rb[i] for i in 1:N_rb))
+@constraint(model, gx1[i in 1:M_rb], C11*SUM_rb[i] - V11[i] >= 0)
+@constraint(model, gx2[i in 1:M_rb], C11*SUM_rb[i] + V11[i] >= 0)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

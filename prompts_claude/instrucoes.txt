@@ -1,0 +1,37 @@
+================================================================
+INSTRUÇÕES — Como usar os lotes no Claude
+================================================================
+
+PASSO 1 — Abra o Claude
+   Acesse: https://claude.ai
+   Use o modelo Claude Opus (mais capaz para código técnico).
+
+PASSO 2 — Para cada lote (lote_01.txt até lote_24.txt):
+   a) Abra o arquivo do lote em qualquer editor de texto
+   b) Selecione TUDO (Ctrl+A) e copie (Ctrl+C)
+   c) Cole no campo de mensagem do Claude (Ctrl+V)
+   d) Envie e aguarde a resposta completa
+
+PASSO 3 — Salve a resposta
+   a) Crie a pasta: respostas_claude/
+   b) Copie a resposta inteira do Claude
+   c) Salve como: respostas_claude/lote_01_resposta.txt
+      (substitua 01 pelo número do lote correspondente)
+
+PASSO 4 — Após salvar todos os lotes, execute:
+   python processar_respostas.py
+   Isso vai separar cada modelo em um arquivo .jl individual
+   na pasta: modelos_jump/
+
+================================================================
+DICAS IMPORTANTES
+================================================================
+
+- Se o Claude parar no meio: peça "continue" ou "continue o código"
+- Se o código vier com ```julia ... ```: o processador remove automaticamente
+- Faça um lote por vez — não envie vários juntos
+- Confira se a resposta tem todos os ### NOME.jl antes de salvar
+- Total de lotes: 24
+- Pasta de destino dos lotes: /media/bruna/Arquivos/Mestrado/Otimização/trabalho/prompts_claude
+
+================================================================

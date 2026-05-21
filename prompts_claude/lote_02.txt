@@ -1,0 +1,328 @@
+================================================================
+LOTE 02 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [bearing_200.mod]
+
+
+# Journal bearing problem
+# Michael Merritt - Summer 2000
+# Version 2.0 - October 2000
+
+model;
+
+param pi := 4*atan(1);
+
+param nx > 0, integer; # grid points in 1st direction
+param ny > 0, integer; # grid points in 2nd direction
+param b;               # grid is (0,2*pi)x(0,2*b)
+param e;               # eccentricity
+
+param hx := 2*pi/(nx+1);  # grid spacing
+param hy := 2*b/(ny+1);   # grid spacing
+param area := 0.5*hx*hy;  # area of triangle
+
+param wq {i in 0..nx+1} := (1+e*cos(i*hx))^3;
+
+var v {0..nx+1,0..ny+1} >= 0;
+
+minimize q: 
+  0.5*(hx*hy/6)*sum {i in 0..nx,j in 0..ny}
+  (wq[i] + 2*wq[i+1])*(((v[i+1,j]-v[i,j])/hx)^2 + ((v[i,j+1]-v[i,j])/hy)^2) +
+  0.5*(hx*hy/6)*sum {i in 1..nx+1,j in 1..ny+1}
+  (2*wq[i] + 2*wq[i-1])*(((v[i-1,j]-v[i,j])/hx)^2 + ((v[i,j-1]-v[i,j])/hy)^2)
+      - hx*hy*sum {i in 0..nx+1,j in 0..ny+1} (e*sin(i*hx)*v[i,j]);
+
+subject to c1 {i in 0..nx+1}: v[i,0] = 0;
+subject to c2 {i in 0..nx+1}: v[i,ny+1] = 0;
+subject to c3 {j in 0..ny+1}: v[0,j] = 0;
+subject to c4 {j in 0..ny+1}: v[nx+1,j] = 0;
+
+
+
+
+
+# Journal bearing problem
+# Michael Merritt - Summer 2000
+# Version 2.0 - October 2000
+
+data;
+
+# Set the number of discretization points and design parameters
+
+param nx := 200;
+param ny := 200;
+
+param b := 10;
+param e := 0.1;
+
+# Set the starting point.
+
+let {i in 0..nx+1,j in 0..ny+1} v[i,j]:= max(sin(i*hx),0);
+
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [bearing_400.mod]
+
+
+# Journal bearing problem
+# Michael Merritt - Summer 2000
+# Version 2.0 - October 2000
+
+model;
+
+param pi := 4*atan(1);
+
+param nx > 0, integer; # grid points in 1st direction
+param ny > 0, integer; # grid points in 2nd direction
+param b;               # grid is (0,2*pi)x(0,2*b)
+param e;               # eccentricity
+
+param hx := 2*pi/(nx+1);  # grid spacing
+param hy := 2*b/(ny+1);   # grid spacing
+param area := 0.5*hx*hy;  # area of triangle
+
+param wq {i in 0..nx+1} := (1+e*cos(i*hx))^3;
+
+var v {0..nx+1,0..ny+1} >= 0;
+
+minimize q: 
+  0.5*(hx*hy/6)*sum {i in 0..nx,j in 0..ny}
+  (wq[i] + 2*wq[i+1])*(((v[i+1,j]-v[i,j])/hx)^2 + ((v[i,j+1]-v[i,j])/hy)^2) +
+  0.5*(hx*hy/6)*sum {i in 1..nx+1,j in 1..ny+1}
+  (2*wq[i] + 2*wq[i-1])*(((v[i-1,j]-v[i,j])/hx)^2 + ((v[i,j-1]-v[i,j])/hy)^2)
+      - hx*hy*sum {i in 0..nx+1,j in 0..ny+1} (e*sin(i*hx)*v[i,j]);
+
+subject to c1 {i in 0..nx+1}: v[i,0] = 0;
+subject to c2 {i in 0..nx+1}: v[i,ny+1] = 0;
+subject to c3 {j in 0..ny+1}: v[0,j] = 0;
+subject to c4 {j in 0..ny+1}: v[nx+1,j] = 0;
+
+
+
+
+
+# Journal bearing problem
+# Michael Merritt - Summer 2000
+# Version 2.0 - October 2000
+
+data;
+
+# Set the number of discretization points and design parameters
+
+param nx := 400;
+param ny := 400;
+
+param b := 10;
+param e := 0.1;
+
+# Set the starting point.
+
+let {i in 0..nx+1,j in 0..ny+1} v[i,j]:= max(sin(i*hx),0);
+
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [camshape_1600.mod]
+
+
+# Cam shape problem
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+model;
+
+param n integer > 0;             # number of discretization points     
+param R_v > 0;                   # design parameter related to the valve shape
+param R_max;                     # maximum allowed radius of the cam
+param R_min;                     # minimum allowed radius of the cam
+param pi := 3.14159265358979;    # approximation of pi
+param alpha;                     # curvature limit parameter
+param d_theta;                   # angle between discretization points 
+                                 #      = 2*pi/5(n+1)
+
+var r{1..n} <= R_max, >= R_min;  # radius of the cam at discretization points
+
+maximize valve_area: ((pi*R_v)/n)*sum {i in 1..n} r[i];
+
+subject to convexity {i in 2..n-1}: 
+  - r[i-1]*r[i] - r[i]*r[i+1] + 2*r[i-1]*r[i+1]*cos(d_theta) <= 0;
+subject to convex_edge1:
+  - R_min*r[1] - r[1]*r[2] + 2*R_min*r[2]*cos(d_theta) <= 0;
+subject to convex_edge2:
+  - R_min^2 - R_min*r[1] + 2*R_min*r[1]*cos(d_theta) <= 0;
+subject to convex_edge3:
+   - r[n-1]*r[n] - r[n]*R_max + 2*r[n-1]*R_max*cos(d_theta) <= 0;
+subject to convex_edge4:
+   - 2*R_max*r[n] + 2*r[n]^2*cos(d_theta) <= 0;
+
+subject to curvature {i in 1..n-1}:
+   -alpha*d_theta <= (r[i+1] - r[i]);
+subject to curvature_edge1:
+    -alpha*d_theta <= (r[1] - R_min);
+subject to curvature_edge2:
+    -alpha*d_theta <= (R_max - r[n]);
+
+subject to curvature1 {i in 1..n-1}:
+   (r[i+1] - r[i]) <= alpha*d_theta;
+subject to curvature_edge11:
+   (r[1] - R_min) <= alpha*d_theta;
+subject to curvature_edge21:
+   (R_max - r[n]) <= alpha*d_theta;
+
+
+
+# Cam shape problem
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+data;
+
+# Set the number of discretization points and design parameters
+
+param n := 1600;
+param R_v := 1.0;
+param R_min := 1.0;
+param R_max := 2.0;
+param alpha := 1.5;
+
+let d_theta := 2*pi/(5*(n+1));
+
+# Set the starting point to the circle of radius R_min
+
+let {i in 1..n} r[i] := (R_min + R_max)/2;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [camshape_6400.mod]
+
+
+# Cam shape problem
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+model;
+
+param n integer > 0;             # number of discretization points     
+param R_v > 0;                   # design parameter related to the valve shape
+param R_max;                     # maximum allowed radius of the cam
+param R_min;                     # minimum allowed radius of the cam
+param pi := 3.14159265358979;    # approximation of pi
+param alpha;                     # curvature limit parameter
+param d_theta;                   # angle between discretization points 
+                                 #      = 2*pi/5(n+1)
+
+var r{1..n} <= R_max, >= R_min;  # radius of the cam at discretization points
+
+maximize valve_area: ((pi*R_v)/n)*sum {i in 1..n} r[i];
+
+subject to convexity {i in 2..n-1}: 
+  - r[i-1]*r[i] - r[i]*r[i+1] + 2*r[i-1]*r[i+1]*cos(d_theta) <= 0;
+subject to convex_edge1:
+  - R_min*r[1] - r[1]*r[2] + 2*R_min*r[2]*cos(d_theta) <= 0;
+subject to convex_edge2:
+  - R_min^2 - R_min*r[1] + 2*R_min*r[1]*cos(d_theta) <= 0;
+subject to convex_edge3:
+   - r[n-1]*r[n] - r[n]*R_max + 2*r[n-1]*R_max*cos(d_theta) <= 0;
+subject to convex_edge4:
+   - 2*R_max*r[n] + 2*r[n]^2*cos(d_theta) <= 0;
+
+subject to curvature {i in 1..n-1}:
+   -alpha*d_theta <= (r[i+1] - r[i]);
+subject to curvature_edge1:
+    -alpha*d_theta <= (r[1] - R_min);
+subject to curvature_edge2:
+    -alpha*d_theta <= (R_max - r[n]);
+
+subject to curvature1 {i in 1..n-1}:
+   (r[i+1] - r[i]) <= alpha*d_theta;
+subject to curvature_edge11:
+   (r[1] - R_min) <= alpha*d_theta;
+subject to curvature_edge21:
+   (R_max - r[n]) <= alpha*d_theta;
+
+
+
+# Cam shape problem
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+data;
+
+# Set the number of discretization points and design parameters
+
+param n := 6400;
+param R_v := 1.0;
+param R_min := 1.0;
+param R_max := 2.0;
+param alpha := 1.5;
+
+let d_theta := 2*pi/(5*(n+1));
+
+# Set the starting point to the circle of radius R_min
+
+let {i in 1..n} r[i] := (R_min + R_max)/2;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [clnlbeam.mod]
+
+param ni := 20000;
+param alpha := 350.0;
+param h := 1/ni;
+
+var t{i in 0..ni} >= -1.0, <= 1.0, := 0.05*cos(i*h);
+var x{i in 0..ni} >= -0.05, <= 0.05, := 0.05*cos(i*h);
+var u{0..ni};
+
+minimize f:
+	sum {i in 0..ni-1} (0.5*h*(u[i+1]^2 + u[i]^2) + 0.5*alpha*h*(cos(t[i+1]) + cos(t[i]))); 
+subject to cons1{i in 0..ni-1}:
+	x[i+1] - x[i] - 0.5*h*(sin(t[i+1]) + sin(t[i]))= 0;
+subject to cons2{i in 0..ni-1}:
+	t[i+1] - t[i] - 0.5*h*u[i+1] - 0.5*h*u[i] = 0;
+
+fix x[0] := 0.0;
+fix x[ni] := 0.0;
+fix t[0] := 0.0;
+fix t[ni] := 0.0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 02
+Salve a resposta completa em: respostas_claude/lote_02_resposta.txt
+================================================================

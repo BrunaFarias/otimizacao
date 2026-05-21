@@ -1,0 +1,110 @@
+================================================================
+LOTE 13 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [lukvle18.mod]
+
+param n := 249997;
+var x{i in 1..n} := 2;
+minimize obj: sum{i in 1..(n-1)/4} ((x[4*i-3]-x[4*i-2])^4+(x[4*i-2]+
+                          x[4*i-1]-2)^2+(x[4*i]-1)^2+(x[4*i+1]-1)^2);
+s.t. eq{k in 1..3*(n-1)/4}: if (k mod 3 == 1) then
+  x[4*((k-1) div 3)+1]^2+3*x[4*((k-1) div 3)+2] else
+  if (k mod 3 == 2) then
+  x[4*((k-1) div 3)+3]^2+x[4*((k-1) div 3)+4]-2*x[4*((k-1) div 3)+5] else
+  x[4*((k-1) div 3)+2]^2-x[4*((k-1) div 3)+5]  == 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvle4.mod]
+
+param n := 250000;
+var x{i in 1..n+2} := if (i mod 4 == 1) then 1 else 2;
+minimize obj: sum{i in 1..n/2}((exp(x[2*i-1])-x[2*i])^4+100*(x[2*i]-x[2*i+1])^6
+  + (tan(x[2*i+1]-x[2*i+2]))^4+x[2*i-1]^8+(x[2*i+2]-1)^2);
+s.t. eq{i in 1..n-2}: 8*x[i+1]*(x[i+1]^2-x[i])-2*(1-x[i+1])+4*(x[i+1]-
+     x[i+2]^2) == 0;
+
+s.t. end1: x[n+1] = 0;
+s.t. end2: x[n+2] = 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvle5.mod]
+
+# this is example 5.5 from http://www.cs.cas.cz/ics/reports/v767-98.ps
+# coded by Hans Mittelmann <mittelmann@asu.edu> 5/2001
+param n := 250000;
+var x{i in 0..n+1} := if (0<i<n+1) then -1 else 0;
+minimize obj: sum{i in 1..n}(abs((3-2*x[i])*x[i]-x[i-1]-x[i+1]+1))^(7/3);
+s.t. eq{i in 1..n-4}: 8*x[i+2]*(x[i+2]^2-x[i+1])-2*(1-x[i+2])+4*(x[i+2]-
+     x[i+3]^2)+x[i+1]^2-x[i]+x[i+3]-x[i+4]^2 == 0;
+
+s.t. begin: x[0] = 0;
+s.t. end: x[n+1] = 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvle6.mod]
+
+param n := 249999;
+var x{1..n+1} := 3;
+minimize obj: sum{i in 1..n}(abs((2+5*x[i]^2)*x[i]+1+sum{j in max(i-5,1)..
+    min(i+1,n)}x[j]*(1+x[j])))^(7/3);
+s.t. eq{i in 1..n/2}: 4*x[2*i]-(x[2*i-1]-x[2*i+1])*exp(x[2*i-1]-x[2*i]-x[2*i+1])
+    -3 == 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvle7.mod]
+
+param n:= 250000;
+var x{i in 0..n+1} := if 1<=i<=n then 1 else 0;
+minimize obj: sum{i in 1..n} i*(1-cos(x[i])+sin(x[i-1])-sin(x[i+1]));
+s.t. eq1: 4*(x[1]-x[2]^2)+x[2]-x[3]^2 == 0;
+s.t. eq2: 8*x[2]*(x[2]^2-x[1])-2*(1-x[2])+4*(x[2]-x[3]^2)+x[3]-x[4]^2 == 0;
+s.t. eq3: 8*x[n-1]*(x[n-1]^2-x[n-2])-2*(1-x[n])+4*(x[n-1]-x[n]^2)+x[n-2]^2
+          -x[n-3] == 0;
+s.t. eq4: 8*x[n]*(x[n]^2-x[n-1])-2*(1-x[n])+x[n-1]^2-x[n-2] == 0;
+
+s.t. end1: x[0]=0;
+s.t. end2: x[n+1]=0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 13
+Salve a resposta completa em: respostas_claude/lote_13_resposta.txt
+================================================================

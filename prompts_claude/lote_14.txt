@@ -1,0 +1,122 @@
+================================================================
+LOTE 14 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [lukvle8.mod]
+
+param n := 250000;
+param s1 := -.002008;
+param s2 := -.0019;
+param s3 := -.000261;
+param h := 1/(n+1);
+var x{i in 1..n} := if (i mod 2 == 1) then -1 else 2;
+minimize obj: sum{i in 1..n/5}( exp(prod{j in 1..5}x[5*i+1-j])+10*((
+  sum{j in 1..5}x[5*i+1-j]^2-10-s1)^2+(x[5*i-3]*x[5*i-2]-5*x[5*i-1]*x[5*i]-s2)^2
+  +(x[5*i-4]^3+x[5*i-3]^3+1-s3)^2));
+s.t. eq{i in 1..n-2}: 2*x[i+1]+h^2*(x[i+1]+h*(i+1)+1)^3/2-x[i]-x[i+2] == 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvle9.mod]
+
+param n := 250000;
+var x{1..n} := -1;
+minimize obj: sum{i in 1..n/2}(1.d-4*(x[2*i-1]-3)^2-(x[2*i-1]-x[2*i])+
+   exp(20*(x[2*i-1]-x[2*i])));
+s.t. eq1: 4*(x[1]-x[2]^2)+x[2]-x[3]^2+x[3]-x[4]^2 == 0;
+s.t. eq2: 8*x[2]*(x[2]^2-x[1])-2*(1-x[2])+4*(x[2]-x[3]^2)+x[1]^2+x[3]-x[4]^2
+          +x[4]-x[5]^2 == 0;
+s.t. eq3: 8*x[3]*(x[3]^2-x[2])-2*(1-x[3])+4*(x[3]-x[4]^2)+x[2]^2-x[1]+x[4]
+          -x[5]^2+x[1]^2+x[5]-x[6]^2 == 0;
+s.t. eq4: 8*x[n-2]*(x[n-2]^2-x[n-3])-2*(1-x[n-2])+4*(x[n-2]-x[n-1]^2)+x[n-3]^2
+          -x[n-4]+x[n-1]-x[n]^2+x[n-4]^2+x[n]-x[n-5] == 0;
+s.t. eq5: 8*x[n-1]*(x[n-1]^2-x[n-2])-2*(1-x[n-1])+4*(x[n-1]-x[n]^2)+x[n-2]^2
+          -x[n-3]+x[n]+x[n-3]^2-x[n-4] == 0;
+s.t. eq6: 8*x[n]*(x[n]^2-x[n-1])-2*(1-x[n])+x[n-1]^2-x[n-2]+x[n-2]^2-x[n-3]==0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvli10.mod]
+
+# this is example 5.10 from http://www.cs.cas.cz/ics/reports/v767-98.ps
+# the equality constraints are replaced by inequality constraints
+# coded by Hans Mittelmann <mittelmann@asu.edu> 5/2001
+param n := 250000;
+var x{i in 1..n} := if (i mod 2 ==1) then -1 else 1;
+minimize obj: sum{i in 1..n/2} ((x[2*i-1]^2)^(x[2*i]^2+1)+(x[2*i]^2)^
+              (x[2*i-1]^2+1));
+s.t. ineq{i in 1..n-2}: (3-2*x[i+1])*x[i+1]+1-x[i]-2*x[i+2] <= 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvli11.mod]
+
+# this is example 5.11 from http://www.cs.cas.cz/ics/reports/v767-98.ps
+# the equality constraints are replaced by inequality constraints
+# coded by Hans Mittelmann <mittelmann@asu.edu> 5/2001
+param n := 249998;
+var x{i in 1..n} := if (i mod 3 ==1) then 2 else if (i mod 3 ==2) then 1.5
+                    else .5;
+minimize obj: sum{i in 1..(n-2)/3} ((x[3*i-2]-x[3*i-1])^2+(x[3*i]-1)^2+
+               (x[3*i+1]-1)^4+(x[3*i+2]-1)^6);
+s.t. ineq{k in 1..2*(n-2)/3}: if (k mod 2 == 1) then
+  x[3*((k-1) div 2)+1]^2*x[3*((k-1) div 2)+4]+sin(x[3*((k-1) div 2)+4]
+ -x[3*((k-1) div 2)+5])-1 else
+  x[3*((k-1) div 2)+2]+x[3*((k-1) div 2)+3]^4*x[3*((k-1) div 2)+4]^2-2 <= 0; 
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [lukvli12.mod]
+
+# this is example 5.12 from http://www.cs.cas.cz/ics/reports/v767-98.ps
+# the equality constraints are replaced by inequality constraints
+# coded by Hans Mittelmann <mittelmann@asu.edu> 5/2001
+param n := 249997;
+var x{i in 1..n} := if (i mod 4 ==1) then 2 else if (i mod 4 ==2) then 1.5
+                    else if (i mod 4 ==3) then -1 else .5;
+minimize obj: sum{i in 1..(n-1)/4} ((x[4*i-3]-x[4*i-2])^2+(x[4*i-2]-x[4*i-1])^2+
+               (x[4*i-1]-x[4*i])^4+(x[4*i]-x[4*i+1])^4);
+s.t. ineq{k in 1..3*(n-1)/4}: if (k mod 3 == 1) then
+  x[4*((k-1) div 3)+1]+x[4*((k-1) div 3)+2]^2+x[4*((k-1) div 3)+3]^3-3 else
+  if (k mod 3 == 2) then
+  x[4*((k-1) div 3)+2]-x[4*((k-1) div 3)+3]^2+x[4*((k-1) div 3)+4]-1 else
+  x[4*((k-1) div 3)+1]*x[4*((k-1) div 3)+5]-1 <= 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 14
+Salve a resposta completa em: respostas_claude/lote_14_resposta.txt
+================================================================

@@ -1,0 +1,221 @@
+### ex1_320.jl
+
+using JuMP
+
+model = Model()
+
+n = 319
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.001
+
+z_param = [1 + 2*(i*h_val*(i*h_val-1)+j*h_val*(j*h_val-1)) for i in 1:n, j in 1:n]
+
+@variable(model, x_v[1:n2])
+@variable(model, u_v[1:n2])
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) - h2*(x_v[idx] - x_v[idx]^3 + u_v[idx]) == 0)
+end
+
+@constraint(model, lbndx[i in 1:n2], u_v[i] >= 1.5)
+@constraint(model, ubndx[i in 1:n2], u_v[i] <= 4.5)
+@constraint(model, lbndy[i in 1:n2], x_v[i] >= 0)
+@constraint(model, ubndy[i in 1:n2], x_v[i] <= 0.185)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex2_160.jl
+
+using JuMP
+
+model = Model()
+
+n = 159
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.0
+
+z_param = [1 + 2*(i*h_val*(i*h_val-1)+j*h_val*(j*h_val-1)) for i in 1:n, j in 1:n]
+
+@variable(model, x_v[1:n2])
+@variable(model, u_v[1:n2])
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) - h2*(x_v[idx] - x_v[idx]^3 + u_v[idx]) == 0)
+end
+
+@constraint(model, lbndx[i in 1:n2], u_v[i] >= 1.5)
+@constraint(model, ubndx[i in 1:n2], u_v[i] <= 4.5)
+@constraint(model, lbndy[i in 1:n2], x_v[i] >= 0)
+@constraint(model, ubndy[i in 1:n2], x_v[i] <= 0.185)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex2_320.jl
+
+using JuMP
+
+model = Model()
+
+n = 319
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.0
+
+z_param = [1 + 2*(i*h_val*(i*h_val-1)+j*h_val*(j*h_val-1)) for i in 1:n, j in 1:n]
+
+@variable(model, x_v[1:n2])
+@variable(model, u_v[1:n2])
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) - h2*(x_v[idx] - x_v[idx]^3 + u_v[idx]) == 0)
+end
+
+@constraint(model, lbndx[i in 1:n2], u_v[i] >= 1.5)
+@constraint(model, ubndx[i in 1:n2], u_v[i] <= 4.5)
+@constraint(model, lbndy[i in 1:n2], x_v[i] >= 0)
+@constraint(model, ubndy[i in 1:n2], x_v[i] <= 0.185)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex3_160.jl
+
+using JuMP
+
+model = Model()
+
+n = 159
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.001
+pi_val = 4*atan(1.0)
+
+z_param = [sin(2*pi_val*i*h_val)*sin(2*pi_val*j*h_val) for i in 1:n, j in 1:n]
+
+@variable(model, -10 <= x_v[1:n2] <= 0.11)
+@variable(model, -5 <= u_v[1:n2] <= 5)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    set_start_value(x_v[idx], z_param[row, col])
+end
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) + h2*(-exp(x_v[idx]) - u_v[idx]) == 0)
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### ex3_320.jl
+
+using JuMP
+
+model = Model()
+
+n = 319
+h_val = 1.0/(n+1)
+h2 = h_val^2
+n2 = n^2
+a_val = 0.001
+pi_val = 4*atan(1.0)
+
+z_param = [sin(2*pi_val*i*h_val)*sin(2*pi_val*j*h_val) for i in 1:n, j in 1:n]
+
+@variable(model, -10 <= x_v[1:n2] <= 0.11)
+@variable(model, -5 <= u_v[1:n2] <= 5)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    set_start_value(x_v[idx], z_param[row, col])
+end
+
+@objective(model, Min,
+    0.5*h2*sum((x_v[(i-1)*n+j]-z_param[i,j])^2 for i in 1:n, j in 1:n) +
+    a_val*0.5*h2*sum(u_v[(i-1)*n+j]^2 for i in 1:n, j in 1:n)
+)
+
+for idx in 1:n2
+    row = div(idx-1, n) + 1
+    col = (idx-1) % n + 1
+    nbrs = Int[]
+    row > 1 && push!(nbrs, idx-n)
+    row < n && push!(nbrs, idx+n)
+    col > 1 && push!(nbrs, idx-1)
+    col < n && push!(nbrs, idx+1)
+    @constraint(model, 4*x_v[idx] - sum(x_v[k] for k in nbrs) + h2*(-exp(x_v[idx]) - u_v[idx]) == 0)
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

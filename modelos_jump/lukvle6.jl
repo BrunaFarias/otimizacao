@@ -1,0 +1,16 @@
+# Gerado automaticamente por converter_ampl.py
+# Origem : lukvle6.mod
+# Modelo : claude-sonnet-4-5
+
+using JuMP
+using Ipopt
+
+n = 249999
+model = Model(Ipopt.Optimizer)
+
+@variable(model, x[1:n+1], start = 3)
+
+@NLobjective(model, Min, sum(abs((2 + 5*x[i]^2)*x[i] + 1 + sum(x[j]*(1 + x[j]) for j in max(i-5, 1):min(i+1, n)))^(7/3) for i in 1:n))
+
+@NLconstraint(model, [i in 1:div(n,2)], 4*x[2*i] - (x[2*i-1] - x[2*i+1])*exp(x[2*i-1] - x[2*i] - x[2*i+1]) - 3 == 0)
+

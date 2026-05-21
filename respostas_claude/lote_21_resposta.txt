@@ -1,0 +1,178 @@
+### qcqp500-3nc.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(10006)
+n = 500; ml = 10; mq = 4; pl = 100; pq = 6
+sd = 0; sq = 0.01; sp = 0.2; plf = 0.1; pqf = 0.2
+
+function gen_LQ_m(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n; LQ[i,i] = rand(); for j in 1:i-1; rand() < sq && (LQ[i,j] = rand()*20-10); end; end
+    return LQ
+end
+LQ = gen_LQ_m(n, sq); Q = (LQ + LQ') / 2
+LP = [gen_LQ_m(n, sp) for _ in 1:mq+pq]; P = [LP[l]*LP[l]' for l in 1:mq+pq]
+A = randn(ml+mq+pl+pq, n); xstar = randn(n); g = -Q*xstar
+b = [i <= ml ? sum(A[i,j]*xstar[j] for j in 1:n) :
+     (i <= ml+mq ? sum(A[i,j]*xstar[j] for j in 1:n) + 0.5*dot(xstar, P[i-ml]*xstar) :
+     sum(A[i,j]*xstar[j] for j in 1:n)) for i in 1:ml+mq+pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+for i in 1:ml; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b[i]); end
+for i in ml+1:ml+mq; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[i-ml]*x_v) == b[i]); end
+for i in 1:pl; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) >= b[ml+mq+i]); end
+for i in pl+1:pl+pq; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) >= b[ml+mq+i]); end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### qcqp750-1c.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(20001)
+n = 750; ml = 100; mq = 0; pl = 100; pq = 45
+sd = 1; sq = 0.01; sp = 0.01; plf = 0.1; pqf = 0.05
+
+function gen_LQ_m(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n; LQ[i,i] = rand(); for j in 1:i-1; rand() < sq && (LQ[i,j] = rand()*20-10); end; end
+    return LQ
+end
+LQ = gen_LQ_m(n, sq); Q = LQ * LQ'
+LP = [gen_LQ_m(n, sp) for _ in 1:mq+pq]; P = [LP[l]*LP[l]' for l in 1:mq+pq]
+A = randn(ml+mq+pl+pq, n); xstar = randn(n); g = -Q*xstar
+b_eq = [sum(A[i,j]*xstar[j] for j in 1:n) for i in 1:ml+mq]
+b_ineq = [sum(A[ml+mq+i,j]*xstar[j] for j in 1:n) + (i > pl ? 0.5*dot(xstar, P[mq+i-pl]*xstar) : 0.0) for i in 1:pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+for i in 1:ml; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b_eq[i]); end
+for i in 1:pl; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) <= b_ineq[i]); end
+for i in pl+1:pl+pq; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) <= b_ineq[i]); end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### qcqp750-1nc.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(20002)
+n = 750; ml = 100; mq = 30; pl = 100; pq = 15
+sd = 0; sq = 0.01; sp = 0.01; plf = 0.1; pqf = 0.05
+
+function gen_LQ_m(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n; LQ[i,i] = rand(); for j in 1:i-1; rand() < sq && (LQ[i,j] = rand()*20-10); end; end
+    return LQ
+end
+LQ = gen_LQ_m(n, sq); Q = (LQ + LQ') / 2
+LP = [gen_LQ_m(n, sp) for _ in 1:mq+pq]; P = [LP[l]*LP[l]' for l in 1:mq+pq]
+A = randn(ml+mq+pl+pq, n); xstar = randn(n); g = -Q*xstar
+b = [i <= ml ? sum(A[i,j]*xstar[j] for j in 1:n) :
+     (i <= ml+mq ? sum(A[i,j]*xstar[j] for j in 1:n) + 0.5*dot(xstar, P[i-ml]*xstar) :
+     sum(A[i,j]*xstar[j] for j in 1:n)) for i in 1:ml+mq+pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+for i in 1:ml; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b[i]); end
+for i in ml+1:ml+mq; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[i-ml]*x_v) == b[i]); end
+for i in 1:pl; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) >= b[ml+mq+i]); end
+for i in pl+1:pl+pq; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) >= b[ml+mq+i]); end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### qcqp750-2c.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(20003)
+n = 750; ml = 25; mq = 0; pl = 100; pq = 13
+sd = 1; sq = 0.01; sp = 0.2; plf = 0.1; pqf = 0.2
+
+function gen_LQ_m(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n; LQ[i,i] = rand(); for j in 1:i-1; rand() < sq && (LQ[i,j] = rand()*20-10); end; end
+    return LQ
+end
+LQ = gen_LQ_m(n, sq); Q = LQ * LQ'
+LP = [gen_LQ_m(n, sp) for _ in 1:mq+pq]; P = [LP[l]*LP[l]' for l in 1:mq+pq]
+A = randn(ml+mq+pl+pq, n); xstar = randn(n); g = -Q*xstar
+b_eq = [sum(A[i,j]*xstar[j] for j in 1:n) for i in 1:ml+mq]
+b_ineq = [sum(A[ml+mq+i,j]*xstar[j] for j in 1:n) + (i > pl ? 0.5*dot(xstar, P[mq+i-pl]*xstar) : 0.0) for i in 1:pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+for i in 1:ml; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b_eq[i]); end
+for i in 1:pl; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) <= b_ineq[i]); end
+for i in pl+1:pl+pq; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) <= b_ineq[i]); end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### qcqp750-2nc.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(20004)
+n = 750; ml = 25; mq = 5; pl = 100; pq = 8
+sd = 0; sq = 0.01; sp = 0.2; plf = 0.1; pqf = 0.2
+
+function gen_LQ_m(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n; LQ[i,i] = rand(); for j in 1:i-1; rand() < sq && (LQ[i,j] = rand()*20-10); end; end
+    return LQ
+end
+LQ = gen_LQ_m(n, sq); Q = (LQ + LQ') / 2
+LP = [gen_LQ_m(n, sp) for _ in 1:mq+pq]; P = [LP[l]*LP[l]' for l in 1:mq+pq]
+A = randn(ml+mq+pl+pq, n); xstar = randn(n); g = -Q*xstar
+b = [i <= ml ? sum(A[i,j]*xstar[j] for j in 1:n) :
+     (i <= ml+mq ? sum(A[i,j]*xstar[j] for j in 1:n) + 0.5*dot(xstar, P[i-ml]*xstar) :
+     sum(A[i,j]*xstar[j] for j in 1:n)) for i in 1:ml+mq+pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+for i in 1:ml; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b[i]); end
+for i in ml+1:ml+mq; @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[i-ml]*x_v) == b[i]); end
+for i in 1:pl; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) >= b[ml+mq+i]); end
+for i in pl+1:pl+pq; @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) >= b[ml+mq+i]); end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

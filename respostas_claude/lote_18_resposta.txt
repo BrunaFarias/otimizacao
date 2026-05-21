@@ -1,0 +1,285 @@
+### marine_800.jl
+
+using JuMP
+
+model = Model()
+
+nc = 2
+ne = 8
+nm = 21
+nh = 800
+
+tau_data = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+            5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0]
+z_obs = [
+    [20000.0,17000.0,10000.0,15000.0,12000.0,9000.0,7000.0,3000.0],
+    [12445.0,15411.0,13040.0,13338.0,13484.0,8426.0,6615.0,4022.0],
+    [7705.0,13074.0,14623.0,11976.0,12453.0,9272.0,6891.0,5020.0],
+    [4664.0,8579.0,12434.0,12603.0,11738.0,9710.0,6821.0,5722.0],
+    [2977.0,7053.0,11219.0,11340.0,13665.0,8534.0,6242.0,5695.0],
+    [1769.0,5054.0,10065.0,11232.0,12112.0,9600.0,6647.0,7034.0],
+    [943.0,3907.0,9473.0,10334.0,11115.0,8826.0,6842.0,7348.0],
+    [581.0,2624.0,7421.0,10297.0,12427.0,8747.0,7199.0,7684.0],
+    [355.0,1744.0,5369.0,7748.0,10057.0,8698.0,6542.0,7410.0],
+    [223.0,1272.0,4713.0,6869.0,9564.0,8766.0,6810.0,6961.0],
+    [137.0,821.0,3451.0,6050.0,8671.0,8291.0,6827.0,7525.0],
+    [87.0,577.0,2649.0,5454.0,8430.0,7411.0,6423.0,8388.0],
+    [49.0,337.0,2058.0,4115.0,7435.0,7627.0,6268.0,7189.0],
+    [32.0,228.0,1440.0,3790.0,6474.0,6658.0,5859.0,7467.0],
+    [17.0,168.0,1178.0,3087.0,6524.0,5880.0,5562.0,7144.0],
+    [11.0,99.0,919.0,2596.0,5360.0,5762.0,4480.0,7256.0],
+    [7.0,65.0,647.0,1873.0,4556.0,5058.0,4944.0,7538.0],
+    [4.0,44.0,509.0,1571.0,4009.0,4527.0,4233.0,6649.0],
+    [2.0,27.0,345.0,1227.0,3677.0,4229.0,3805.0,6378.0],
+    [1.0,20.0,231.0,934.0,3197.0,3695.0,3159.0,6454.0],
+    [1.0,12.0,198.0,707.0,2562.0,3163.0,3232.0,5566.0]
+]
+rho_leg = [0.78867513459481, 0.21132486540519]
+
+tf = tau_data[end]
+h_coll = tf/nh
+t_part = [(i-1)*h_coll for i in 1:nh+1]
+fact_v = [i == 0 ? 1.0 : prod(float.(1:i)) for i in 0:nc]
+itau = [min(nh, floor(Int, tau_data[i]/h_coll)+1) for i in 1:nm]
+
+@variable(model, g_rate[1:ne-1] >= 0.0)
+@variable(model, m_rate[1:ne] >= 0.0)
+@variable(model, v_coll[1:nh, 1:ne])
+@variable(model, w_coll[1:nh, 1:nc, 1:ne])
+
+for i in 1:itau[1], s in 1:ne; set_start_value(v_coll[i,s], z_obs[1][s]); end
+for j in 2:nm, i in itau[j-1]+1:itau[j], s in 1:ne; set_start_value(v_coll[i,s], z_obs[j][s]); end
+for i in itau[nm]+1:nh, s in 1:ne; set_start_value(v_coll[i,s], z_obs[nm][s]); end
+
+@objective(model, Min,
+    sum((sum(v_coll[itau[j],s] + sum(w_coll[itau[j],k,s]*(tau_data[j]-t_part[itau[j]])^k/(fact_v[k+1]*h_coll^(k-1)) for k in 1:nc) - z_obs[j][s] for s in 1:ne))^2 for j in 1:nm)
+)
+
+@constraint(model, continuity[i in 1:nh-1, s in 1:ne],
+    v_coll[i,s] + h_coll*sum(w_coll[i,j,s]/fact_v[j+1] for j in 1:nc) == v_coll[i+1,s])
+
+for i in 1:nh, j in 1:nc
+    uc = [v_coll[i,s] + h_coll*sum(w_coll[i,k,s]*(rho_leg[j]^k/fact_v[k+1]) for k in 1:nc) for s in 1:ne]
+    Duc = [sum(w_coll[i,k,s]*(rho_leg[j]^(k-1)/fact_v[k]) for k in 1:nc) for s in 1:ne]
+    @constraint(model, Duc[1] == -(m_rate[1]+g_rate[1])*uc[1])
+    for s in 2:ne-1
+        @constraint(model, Duc[s] == g_rate[s-1]*uc[s-1] - (m_rate[s]+g_rate[s])*uc[s])
+    end
+    @constraint(model, Duc[ne] == g_rate[ne-1]*uc[ne-1] - m_rate[ne]*uc[ne])
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### optmass.jl
+
+using JuMP
+
+model = Model()
+
+n_steps = 10000
+speed_v = 0.01
+pen_v = 0.335
+
+@variable(model, x_v[1:2, 0:n_steps+1])
+@variable(model, v_vel[1:2, 0:n_steps+1])
+@variable(model, f_force[1:2, 0:n_steps])
+
+fix(x_v[1,0], 0.0; force=true)
+fix(x_v[2,0], 0.0; force=true)
+fix(v_vel[1,0], speed_v; force=true)
+fix(v_vel[2,0], 0.0; force=true)
+
+@objective(model, Min,
+    pen_v*(v_vel[1,n_steps+1]^2+v_vel[2,n_steps+1]^2) -
+    (x_v[1,n_steps+1]^2+x_v[2,n_steps+1]^2)
+)
+
+@constraint(model, cons1[i in 1:n_steps+1, j in 1:2],
+    x_v[j,i] - x_v[j,i-1] - v_vel[j,i-1]/n_steps - f_force[j,i-1]/(2*n_steps^2) == 0)
+@constraint(model, cons2[i in 1:n_steps+1, j in 1:2],
+    v_vel[j,i] - v_vel[j,i-1] - f_force[j,i-1]/n_steps == 0)
+@constraint(model, cons3[i in 0:n_steps],
+    f_force[1,i]^2 + f_force[2,i]^2 <= 1)
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### pinene_1600.jl
+
+using JuMP
+
+model = Model()
+
+nc = 3
+ne = 5
+np_val = 5
+nm = 8
+nh = 1600
+
+tau_data = [1230.0, 3060.0, 4920.0, 7800.0, 10680.0, 15030.0, 22620.0, 36420.0]
+z_obs = [[88.35,7.3,2.3,0.4,1.75],[76.4,15.6,4.5,0.7,2.8],[65.1,23.1,5.3,1.1,5.8],
+         [50.4,32.9,6.0,1.5,9.3],[37.5,42.7,6.0,1.9,12.0],[25.9,49.1,5.9,2.2,17.0],
+         [14.0,57.4,5.1,2.6,21.0],[4.5,63.1,3.8,2.9,25.7]]
+rho_leg = [0.50000000000000, 0.88729833462074, 0.11270166537926]
+bc_val = [100.0, 0.0, 0.0, 0.0, 0.0]
+
+tf = tau_data[end]
+h_coll = tf/nh
+t_part = [(i-1)*h_coll for i in 1:nh+1]
+fact_v = [i == 0 ? 1.0 : prod(float.(1:i)) for i in 0:nc]
+itau = [min(nh, floor(Int, tau_data[i]/h_coll)+1) for i in 1:nm]
+
+@variable(model, theta_p[1:np_val] >= 0.0, start=0.0)
+@variable(model, v_coll[1:nh, 1:ne])
+@variable(model, w_coll[1:nh, 1:nc, 1:ne])
+
+for i in 1:itau[1], s in 1:ne; set_start_value(v_coll[i,s], bc_val[s]); end
+for j in 2:nm, i in itau[j-1]+1:itau[j], s in 1:ne; set_start_value(v_coll[i,s], z_obs[j][s]); end
+for i in itau[nm]+1:nh, s in 1:ne; set_start_value(v_coll[i,s], z_obs[nm][s]); end
+
+@objective(model, Min,
+    sum((sum(v_coll[itau[j],s] + sum(w_coll[itau[j],k,s]*(tau_data[j]-t_part[itau[j]])^k/(fact_v[k+1]*h_coll^(k-1)) for k in 1:nc) - z_obs[j][s] for s in 1:ne))^2 for j in 1:nm)
+)
+
+@constraint(model, ode_bc[s in 1:ne], v_coll[1,s] == bc_val[s])
+@constraint(model, continuity[i in 1:nh-1, s in 1:ne],
+    v_coll[i,s] + h_coll*sum(w_coll[i,j,s]/fact_v[j+1] for j in 1:nc) == v_coll[i+1,s])
+
+for i in 1:nh, j in 1:nc
+    uc = [v_coll[i,s] + h_coll*sum(w_coll[i,k,s]*(rho_leg[j]^k/fact_v[k+1]) for k in 1:nc) for s in 1:ne]
+    Duc = [sum(w_coll[i,k,s]*(rho_leg[j]^(k-1)/fact_v[k]) for k in 1:nc) for s in 1:ne]
+    @constraint(model, Duc[1] == -(theta_p[1]+theta_p[2])*uc[1])
+    @constraint(model, Duc[2] == theta_p[1]*uc[1])
+    @constraint(model, Duc[3] == theta_p[2]*uc[1] - (theta_p[3]+theta_p[4])*uc[3] + theta_p[5]*uc[5])
+    @constraint(model, Duc[4] == theta_p[3]*uc[3])
+    @constraint(model, Duc[5] == theta_p[4]*uc[3] - theta_p[5]*uc[5])
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### pinene_3200.jl
+
+using JuMP
+
+model = Model()
+
+nc = 3
+ne = 5
+np_val = 5
+nm = 8
+nh = 3200
+
+tau_data = [1230.0, 3060.0, 4920.0, 7800.0, 10680.0, 15030.0, 22620.0, 36420.0]
+z_obs = [[88.35,7.3,2.3,0.4,1.75],[76.4,15.6,4.5,0.7,2.8],[65.1,23.1,5.3,1.1,5.8],
+         [50.4,32.9,6.0,1.5,9.3],[37.5,42.7,6.0,1.9,12.0],[25.9,49.1,5.9,2.2,17.0],
+         [14.0,57.4,5.1,2.6,21.0],[4.5,63.1,3.8,2.9,25.7]]
+rho_leg = [0.50000000000000, 0.88729833462074, 0.11270166537926]
+bc_val = [100.0, 0.0, 0.0, 0.0, 0.0]
+
+tf = tau_data[end]
+h_coll = tf/nh
+t_part = [(i-1)*h_coll for i in 1:nh+1]
+fact_v = [i == 0 ? 1.0 : prod(float.(1:i)) for i in 0:nc]
+itau = [min(nh, floor(Int, tau_data[i]/h_coll)+1) for i in 1:nm]
+
+@variable(model, theta_p[1:np_val] >= 0.0, start=0.0)
+@variable(model, v_coll[1:nh, 1:ne])
+@variable(model, w_coll[1:nh, 1:nc, 1:ne])
+
+for i in 1:itau[1], s in 1:ne; set_start_value(v_coll[i,s], bc_val[s]); end
+for j in 2:nm, i in itau[j-1]+1:itau[j], s in 1:ne; set_start_value(v_coll[i,s], z_obs[j][s]); end
+for i in itau[nm]+1:nh, s in 1:ne; set_start_value(v_coll[i,s], z_obs[nm][s]); end
+
+@objective(model, Min,
+    sum((sum(v_coll[itau[j],s] + sum(w_coll[itau[j],k,s]*(tau_data[j]-t_part[itau[j]])^k/(fact_v[k+1]*h_coll^(k-1)) for k in 1:nc) - z_obs[j][s] for s in 1:ne))^2 for j in 1:nm)
+)
+
+@constraint(model, ode_bc[s in 1:ne], v_coll[1,s] == bc_val[s])
+@constraint(model, continuity[i in 1:nh-1, s in 1:ne],
+    v_coll[i,s] + h_coll*sum(w_coll[i,j,s]/fact_v[j+1] for j in 1:nc) == v_coll[i+1,s])
+
+for i in 1:nh, j in 1:nc
+    uc = [v_coll[i,s] + h_coll*sum(w_coll[i,k,s]*(rho_leg[j]^k/fact_v[k+1]) for k in 1:nc) for s in 1:ne]
+    Duc = [sum(w_coll[i,k,s]*(rho_leg[j]^(k-1)/fact_v[k]) for k in 1:nc) for s in 1:ne]
+    @constraint(model, Duc[1] == -(theta_p[1]+theta_p[2])*uc[1])
+    @constraint(model, Duc[2] == theta_p[1]*uc[1])
+    @constraint(model, Duc[3] == theta_p[2]*uc[1] - (theta_p[3]+theta_p[4])*uc[3] + theta_p[5]*uc[5])
+    @constraint(model, Duc[4] == theta_p[3]*uc[3])
+    @constraint(model, Duc[5] == theta_p[4]*uc[3] - theta_p[5]*uc[5])
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))
+
+────────────────────────────────────────────────────────────────
+
+### qcqp1000-1c.jl
+
+using JuMP
+using LinearAlgebra
+using Random
+
+model = Model()
+
+Random.seed!(12345)
+n = 1000; ml = 100; mq = 0; pl = 50; pq = 4
+sd = 1; sq = 0.01; sp = 0.01; plf = 0.2; pqf = 0.2
+
+function gen_LQ_mat(n, sq)
+    LQ = zeros(n, n)
+    for i in 1:n
+        LQ[i,i] = rand()
+        for j in 1:i-1
+            rand() < sq && (LQ[i,j] = rand()*20-10)
+        end
+    end
+    return LQ
+end
+
+LQ = gen_LQ_mat(n, sq)
+Q = sd == 1 ? LQ * LQ' : (LQ + LQ') / 2
+LP = [gen_LQ_mat(n, sp) for _ in 1:mq+pq]
+P = [LP[l] * LP[l]' for l in 1:mq+pq]
+y_lag = randn(ml+mq)
+z_lag = [i <= pl && rand() < plf ? rand()*10 : (i > pl && rand() < pqf ? rand()*10 : 0.0) for i in 1:pl+pq]
+A0 = randn(ml+mq+pl+pq, n)
+A = zeros(ml+mq+pl+pq, n)
+for i in 1:ml+mq+pl+pq
+    max_abs = maximum(abs.(A0[i,:]))
+    for j in 1:n
+        abs(A0[i,j]) == max_abs ? (A[i,j] = A0[i,j]) : (rand() < sq && (A[i,j] = A0[i,j]))
+    end
+end
+xstar = randn(n)
+g = -Q*xstar + A[1:ml,:]'*y_lag[1:ml]
+b_eq = [sum(A[i,j]*xstar[j] for j in 1:n) + (i > ml ? 0.5*dot(xstar, P[i-ml]*xstar) : 0.0) for i in 1:ml+mq]
+b_ineq = [sum(A[ml+mq+i,j]*xstar[j] for j in 1:n) + (i > pl ? 0.5*dot(xstar, P[mq+i-pl]*xstar) : 0.0) for i in 1:pl+pq]
+
+@variable(model, x_v[1:n])
+@objective(model, Min, 0.5*dot(x_v, Q*x_v) + dot(g, x_v))
+
+for i in 1:ml
+    @constraint(model, sum(A[i,j]*x_v[j] for j in 1:n) == b_eq[i])
+end
+for i in 1:pl
+    @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) <= b_ineq[i])
+end
+for i in pl+1:pl+pq
+    @constraint(model, sum(A[ml+mq+i,j]*x_v[j] for j in 1:n) + 0.5*dot(x_v, P[mq+i-pl]*x_v) <= b_ineq[i])
+end
+
+optimize!(model)
+println("Status: ", termination_status(model))
+println("Objetivo: ", objective_value(model))

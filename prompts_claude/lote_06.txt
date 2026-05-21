@@ -1,0 +1,209 @@
+================================================================
+LOTE 06 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [dtoc1nd.mod]
+
+param n := 150;
+param nx := 15;
+param ny := 25;
+
+param mu := 1.0;
+
+param b{i in 1..ny, j in 1..nx} := (i-j)/(nx+ny);
+param c{i in 1..ny, j in 1..nx} := (i+j)*mu/(nx+ny);
+
+var x{1..n-1, 1..nx};
+var y{1..n, 1..ny};
+
+minimize f:
+	sum {t in 1..n-1, i in 1..nx} (x[t,i] + 0.5)^4 +
+	sum {t in 1..n, i in 1..ny} (y[t,i] + 0.25)^4;
+subject to cons1{t in 1..n-1}:
+	sum {k in 0..ny*nx-1} c[(k div nx)+1,k-nx*(k div nx)+1]*y[t,(k div nx)+1]*x[t,k-nx*(k div nx)+1]+0.5*y[t,1] + 0.25*y[t,2] - y[t+1,1] + sum {i in 1..nx} b[1,i]*x[t,i] = 0;
+subject to cons2{t in 1..n-1, j in 2..ny-1}:
+        sum {k in 0..ny*nx-1} c[(k div nx)+1,k-nx*(k div nx)+1]*y[t,(k div nx)+1]*x[t,k-nx*(k div nx)+1]-y[t+1,j] + 0.5*y[t,j] - 0.25*y[t,j-1] + 0.25*y[t,j+1] + sum {i in 1..nx} b[j,i]*x[t,i] = 0;
+subject to cons3{t in 1..n-1}:
+        sum {k in 0..ny*nx-1} c[(k div nx)+1,k-nx*(k div nx)+1]*y[t,(k div nx)+1]*x[t,k-nx*(k div nx)+1]+0.5*y[t,ny] - 0.25*y[t,ny-1] - y[t+1,ny] + sum {i in 1..nx} b[ny,i]*x[t,i] = 0;
+
+fix {i in 1..ny} y[1,i] := 0.0;
+
+
+────────────────────────────────────────────────────────────────
+
+### [dtoc2.mod]
+
+param n := 1300;
+param nx := 20;
+param ny := 30;
+param c{i in 1..ny, j in 1..nx} := (i+j)/(2*ny);
+
+var x{1..n-1,1..nx};
+var y{1..n,1..ny};
+
+minimize f:
+	sum {t in 1..n-1} (sum {j in 1..ny} y[t,j]^2)*((sin(0.5*sum{j in 1..nx} x[t,j]^2))^2 + 1.0) + sum {j in 1..ny} y[n,j]^2;
+subject to cons1{t in 1..n-1,j in 1..ny}:
+	sin(y[t,j]) + sum {i in 1..nx} c[j,i]*(sin(x[t,i])) -y[t+1,j] = 0;
+fix{i in 1..ny} y[1,i] := i/(2*ny);
+
+
+────────────────────────────────────────────────────────────────
+
+### [elec_200.mod]
+
+
+# Electrons on a sphere problem.
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+model;
+
+param np integer > 0;               # number of electrons
+param pi := 3.14159265358979;       # approximation of pi
+
+var x {1..np};                      # x-coordinate of the electron
+var y {1..np};                      # y-coordinate of the electron
+var z {1..np};	                    # z-coordinate of the electron
+
+minimize coulomb_potential:  
+  sum {i in 1..np-1} sum {j in i+1..np} 
+  1.0/sqrt( (x[i] - x[j])^2 + (y[i] - y[j])^2 + (z[i] - z[j])^2 );
+
+subject to on_the_unit_ball {i in 1..np}:  x[i]^2 + y[i]^2 + z[i]^2 = 1;
+
+# Electrons on a sphere problem.
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+data;
+
+param np := 200;
+
+# Set the starting point to a quasi-uniform distribution 
+# of electrons on a unit sphere
+
+option randseed '861276191';
+param theta {i in 1..np} := 2*pi*Uniform01();
+param phi   {i in 1..np} :=   pi*Uniform01();
+
+let {i in 1..np} x[i] := cos(theta[i])*sin(phi[i]);
+let {i in 1..np} y[i] := sin(theta[i])*sin(phi[i]);
+let {i in 1..np} z[i] :=               cos(phi[i]);
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [elec_400.mod]
+
+
+# Electrons on a sphere problem.
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+model;
+
+param np integer > 0;               # number of electrons
+param pi := 3.14159265358979;       # approximation of pi
+
+var x {1..np};                      # x-coordinate of the electron
+var y {1..np};                      # y-coordinate of the electron
+var z {1..np};	                    # z-coordinate of the electron
+
+minimize coulomb_potential:  
+  sum {i in 1..np-1} sum {j in i+1..np} 
+  1.0/sqrt( (x[i] - x[j])^2 + (y[i] - y[j])^2 + (z[i] - z[j])^2 );
+
+subject to on_the_unit_ball {i in 1..np}:  x[i]^2 + y[i]^2 + z[i]^2 = 1;
+
+# Electrons on a sphere problem.
+# Alexander S. Bondarenko - Summer 1998
+# Version 2.0 - October 2000
+
+data;
+
+param np := 400;
+
+# Set the starting point to a quasi-uniform distribution 
+# of electrons on a unit sphere
+
+option randseed '861276191';
+param theta {i in 1..np} := 2*pi*Uniform01();
+param phi   {i in 1..np} :=   pi*Uniform01();
+
+let {i in 1..np} x[i] := cos(theta[i])*sin(phi[i]);
+let {i in 1..np} y[i] := sin(theta[i])*sin(phi[i]);
+let {i in 1..np} z[i] :=               cos(phi[i]);
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex1_160.mod]
+
+# this is example 1 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n := 159;
+param h := 1/(n+1);
+param h2 := h^2;
+param n2 := n^2;
+param n4 := n*4;
+param a := 0.001;
+
+param z{i in 1..n, j in 1..n} := 1 + 2 * (i*h*(i*h-1)+j*h*(j*h-1));
+
+set P := {i in 1..n2, j in 1..n2: i == j || j = i + n || i = j + n ||
+            i = j - 1 && i mod n <> 0|| i = j + 1 && j mod n <> 0};
+	   
+param A{(i,j) in P} := if i == j then 4 else -1;
+
+var x{i in 1..n2};
+#var x{i in 1..n2} := 3;
+var u{i in 1..n2};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} (x[(i-1)*n+j]-z[i,j])^2 +
+           	a*.5*h2*sum{i in 1..n, j in 1..n} u[(i-1)*n+j]^2;
+
+s.t. pde{i in 1..n2}: 
+		sum{(i,j) in P} A[i,j]*x[j]-h2*(x[i] - x[i]^3 + u[i]) == 0;
+
+s.t. lbndx{i in 1..n2}: u[i] >= 1.5;
+s.t. ubndx{i in 1..n2}: u[i] <= 4.5;
+
+s.t. lbndy{i in 1..n2}: x[i] >= 0;
+s.t. ubndy{i in 1..n2}: x[i] <= .185;
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 06
+Salve a resposta completa em: respostas_claude/lote_06_resposta.txt
+================================================================

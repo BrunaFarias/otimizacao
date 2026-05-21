@@ -1,0 +1,247 @@
+================================================================
+LOTE 08 DE 24  |  5 modelo(s)  |  Gerado em 20/05/2026 01:10
+================================================================
+
+Você é um especialista em otimização matemática.
+Abaixo estão 5 modelo(s) escritos em AMPL (.mod).
+Converta cada um para Julia usando o pacote JuMP.
+
+REGRAS ESTRITAS — siga exatamente:
+1. Retorne APENAS código Julia. Zero explicações, zero texto fora do código.
+2. Separe cada modelo com o cabeçalho exato:
+       ### NOME_DO_ARQUIVO.jl
+3. Cada código deve ser autocontido e executável:
+   - Inclua os `using` necessários (JuMP, etc.)
+   - NÃO defina o solver — use apenas: model = Model()
+   - O solver será injetado automaticamente pelo script de execução.
+4. Inclua TODAS as variáveis, restrições e a função objetivo do original.
+5. Ao final de cada modelo, adicione exatamente estas 3 linhas:
+       optimize!(model)
+       println("Status: ", termination_status(model))
+       println("Objetivo: ", objective_value(model))
+
+----------------------------------------------------------------
+MODELOS DESTE LOTE:
+----------------------------------------------------------------
+
+### [ex4_160.mod]
+
+# this is example 4 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n default 159;
+param n1 := n+1;
+param h := 1/n1;
+param h2 := h^2;
+param a := .001;
+param pi := 4*atan(1);
+param z{i in 1..n, j in 1..n} := sin(2*pi*i*h)*sin(2*pi*j*h);
+
+var x{0..n1, 0..n1};
+#var u{i in 1..n, j in 1..n} := z[i,j];
+var u{i in 1..n, j in 1..n};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} 
+(x[i,j]-z[i,j])^2 + .5*h2*a*sum{i in 1..n, j in 1..n} u[i,j]^2;
+
+s.t. pde{i in 1..n, j in 1..n}:
+	4*x[i,j] - sum{k in {-1,1}} (x[i+k,j] + x[i,j+k]) =
+        h2*(exp(x[i,j])+u[i,j]);
+
+s.t. bc1 {i in 1..n}: x[i,0] - x[i,1] + h*x[i,0] = 0;
+s.t. bc2 {i in 1..n}: x[0,i] - x[1,i] + h*x[0,i] = 0;
+s.t. bc3 {i in 1..n}: x[n1,i] - x[n,i] + h*x[n1,i] = 0;
+s.t. bc4 {i in 1..n}: x[i,n1] - x[i,n] + h*x[i,n1] = 0;
+
+s.t. sc1{i in 0..n1, j in 0..n1}: -10 <= x[i,j];      # state constraints
+s.t. sc2{i in 0..n1, j in 0..n1}: x[i,j] <= .365;      # state constraints
+
+s.t. cc1{i in 1..n, j in 1..n}: -8 <= u[i,j];    # control constraints
+s.t. cc2{i in 1..n, j in 1..n}: u[i,j] <= 9;    # control constraints
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex4_2_160.mod]
+
+# this is example 4.2 from
+# H. D. Mittelmann and H. Maurer, Solving Elliptic Control Problems with
+# Interior Point and SQP Methods: Control and State Constraints,
+# J. Comp. Appl. Math. 120, 175-195 (2000).
+
+param n default 159;
+param n1 := n+1;
+param b default 1;
+param ub default 7.1;
+param pi default 4*atan(1);
+param r default 1.7;
+param d default 2;
+param sk default 0;
+param sm default 1;
+
+var u{0..n1, 0..n1} := 6;
+var f{1..n, 1..n} :=2;
+
+param h := 1/n1;
+param h2 := h^2;
+
+param a{i in 1..n, j in 1..n} := 7 + 4 * sin(2*pi*i*j*h2);
+
+minimize ff: h2*sum{i in 1..n, j in 1..n} f[i,j]*(sm*f[i,j] - sk*u[i,j]);
+
+s.t. pde{i in 1..n, j in 1..n}:
+	4*u[i,j] - sum{k in {-1,1}} (u[i+k,j] + u[i,j+k]) - u[i,j] *
+	(a[i,j] - f[i,j] - b*u[i,j])*h2 == 0;
+
+s.t. sc{i in 0..n1, j in 0..n1}: 0 <= u[i,j] <= ub;      # state constraints
+
+s.t. bc1 {i in 1..n}: u[i,0]  = u[i,1];
+s.t. bc2 {j in 1..n}: u[0,j]  = u[1,j];
+s.t. bc4 {j in 1..n}: u[n1,j] = u[n,j];
+s.t. bc3 {i in 1..n}: u[i,n1] = u[i,n];
+
+s.t. cc{i in 1..n, j in 1..n}: r <= f[i,j] <= d;    # control constraints
+
+#s.t. fix_corners1{j in {0}, i in {0,n1}}: u[i,j] = 0;
+#s.t. fix_corners2{j in {n1}, i in {0,n1}}: u[i,j] = 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex4_2_320.mod]
+
+# this is example 4.2 from
+# H. D. Mittelmann and H. Maurer, Solving Elliptic Control Problems with
+# Interior Point and SQP Methods: Control and State Constraints,
+# J. Comp. Appl. Math. 120, 175-195 (2000).
+
+param n default 319;
+param n1 := n+1;
+param b default 1;
+param ub default 7.1;
+param pi default 4*atan(1);
+param r default 1.7;
+param d default 2;
+param sk default 0;
+param sm default 1;
+
+var u{0..n1, 0..n1} := 6;
+var f{1..n, 1..n} :=2;
+
+param h := 1/n1;
+param h2 := h^2;
+
+param a{i in 1..n, j in 1..n} := 7 + 4 * sin(2*pi*i*j*h2);
+
+minimize ff: h2*sum{i in 1..n, j in 1..n} f[i,j]*(sm*f[i,j] - sk*u[i,j]);
+
+s.t. pde{i in 1..n, j in 1..n}:
+	4*u[i,j] - sum{k in {-1,1}} (u[i+k,j] + u[i,j+k]) - u[i,j] *
+	(a[i,j] - f[i,j] - b*u[i,j])*h2 == 0;
+
+s.t. sc{i in 0..n1, j in 0..n1}: 0 <= u[i,j] <= ub;      # state constraints
+
+s.t. bc1 {i in 1..n}: u[i,0]  = u[i,1];
+s.t. bc2 {j in 1..n}: u[0,j]  = u[1,j];
+s.t. bc4 {j in 1..n}: u[n1,j] = u[n,j];
+s.t. bc3 {i in 1..n}: u[i,n1] = u[i,n];
+
+s.t. cc{i in 1..n, j in 1..n}: r <= f[i,j] <= d;    # control constraints
+
+#s.t. fix_corners1{j in {0}, i in {0,n1}}: u[i,j] = 0;
+#s.t. fix_corners2{j in {n1}, i in {0,n1}}: u[i,j] = 0;
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex4_320.mod]
+
+# this is example 4 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n default 319;
+param n1 := n+1;
+param h := 1/n1;
+param h2 := h^2;
+param a := .001;
+param pi := 4*atan(1);
+param z{i in 1..n, j in 1..n} := sin(2*pi*i*h)*sin(2*pi*j*h);
+
+var x{0..n1, 0..n1};
+#var u{i in 1..n, j in 1..n} := z[i,j];
+var u{i in 1..n, j in 1..n};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} 
+(x[i,j]-z[i,j])^2 + .5*h2*a*sum{i in 1..n, j in 1..n} u[i,j]^2;
+
+s.t. pde{i in 1..n, j in 1..n}:
+	4*x[i,j] - sum{k in {-1,1}} (x[i+k,j] + x[i,j+k]) =
+        h2*(exp(x[i,j])+u[i,j]);
+
+s.t. bc1 {i in 1..n}: x[i,0] - x[i,1] + h*x[i,0] = 0;
+s.t. bc2 {i in 1..n}: x[0,i] - x[1,i] + h*x[0,i] = 0;
+s.t. bc3 {i in 1..n}: x[n1,i] - x[n,i] + h*x[n1,i] = 0;
+s.t. bc4 {i in 1..n}: x[i,n1] - x[i,n] + h*x[i,n1] = 0;
+
+s.t. sc1{i in 0..n1, j in 0..n1}: -10 <= x[i,j];      # state constraints
+s.t. sc2{i in 0..n1, j in 0..n1}: x[i,j] <= .365;      # state constraints
+
+s.t. cc1{i in 1..n, j in 1..n}: -8 <= u[i,j];    # control constraints
+s.t. cc2{i in 1..n, j in 1..n}: u[i,j] <= 9;    # control constraints
+
+
+
+────────────────────────────────────────────────────────────────
+
+### [ex5_160.mod]
+
+# this is example 5 from
+# H. Maurer and H. D. Mittelmann, Optimization Techniques for Solving Elliptic
+# Control Problems with Control and State Constraints. 
+# Part 2: Distributed Control, Comp. Optim. Applic. 18, 141-160 (2001).
+
+param n default 159;
+param n1 := n+1;
+param h := 1/n1;
+param h2 := h^2;
+param a := .0;
+param pi := 4*atan(1);
+param z{i in 1..n, j in 1..n} := sin(2*pi*i*h)*sin(2*pi*j*h);
+
+var x{0..n1, 0..n1};
+#var u{i in 1..n, j in 1..n} := z[i,j];
+var u{i in 1..n, j in 1..n};
+
+minimize f:	.5*h2*sum{i in 1..n, j in 1..n} 
+(x[i,j]-z[i,j])^2 + .5*h2*a*sum{i in 1..n, j in 1..n} u[i,j]^2;
+
+s.t. pde{i in 1..n, j in 1..n}:
+	4*x[i,j] - sum{k in {-1,1}} (x[i+k,j] + x[i,j+k]) =
+        h2*(-exp(x[i,j])+u[i,j]);
+
+s.t. bc1 {i in 1..n}: x[i,0] - x[i,1] + h*x[i,0] = 0;
+s.t. bc2 {i in 1..n}: x[0,i] - x[1,i] + h*x[0,i] = 0;
+s.t. bc3 {i in 1..n}: x[n1,i] - x[n,i] + h*x[n1,i] = 0;
+s.t. bc4 {i in 1..n}: x[i,n1] - x[i,n] + h*x[i,n1] = 0;
+
+s.t. sc1{i in 0..n1, j in 0..n1}: -10 <= x[i,j];      # state constraints
+s.t. sc2{i in 0..n1, j in 0..n1}: x[i,j] <= .3;      # state constraints
+
+s.t. cc1{i in 1..n, j in 1..n}: -8 <= u[i,j];    # control constraints
+s.t. cc2{i in 1..n, j in 1..n}: u[i,j] <= 9;    # control constraints
+
+
+
+────────────────────────────────────────────────────────────────
+
+================================================================
+FIM DO LOTE 08
+Salve a resposta completa em: respostas_claude/lote_08_resposta.txt
+================================================================

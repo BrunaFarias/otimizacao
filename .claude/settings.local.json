@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -P \";\\\\s*$\" /media/bruna/Arquivos/Mestrado/Otimização/trabalho/dados_ampl/arki0003.mod)",
+      "Bash(grep -P \";\\\\s*$\" /media/bruna/Arquivos/Mestrado/Otimização/trabalho/dados_ampl/arki0009.mod)",
+      "Bash(grep -P \";\\\\s*$\" /media/bruna/Arquivos/Mestrado/Otimização/trabalho/dados_ampl/ex8_2_2.mod)",
+      "Bash(grep -P \";\\\\s*$\" /media/bruna/Arquivos/Mestrado/Otimização/trabalho/dados_ampl/ex8_2_3.mod)",
+      "Bash(python3 *)"
+    ]
+  }
+}
