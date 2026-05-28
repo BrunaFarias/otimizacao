@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 n = 159
 h = 1/(n+1)
@@ -33,7 +32,7 @@ for (i,j) in P
     A[i,j] = (i == j) ? 4 : -1
 end
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[i in 1:n2])
 @variable(model, u[i in 1:n2])

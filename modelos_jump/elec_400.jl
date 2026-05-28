@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 using Random
 
 np = 400
@@ -17,7 +16,7 @@ x_init = [cos(theta[i]) * sin(phi[i]) for i in 1:np]
 y_init = [sin(theta[i]) * sin(phi[i]) for i in 1:np]
 z_init = [cos(phi[i]) for i in 1:np]
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[1:np])
 @variable(model, y[1:np])

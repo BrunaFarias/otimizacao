@@ -3,9 +3,8 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 h_0 = 1.0
 v_0 = 0.0

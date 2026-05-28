@@ -3,7 +3,6 @@
 # Modelo : claude-opus-4-20250514
 
 using JuMP
-using Ipopt
 
 n = 300
 m = n
@@ -16,7 +15,7 @@ h2 = dx^2
 a = 0.001
 yt = [0.5 * (1 - (j * dx)^2) for j in 0:n]
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, y[0:m, 0:n])
 @variable(model, u[1:m])

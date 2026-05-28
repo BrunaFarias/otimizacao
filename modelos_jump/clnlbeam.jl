@@ -3,13 +3,12 @@
 # Modelo : claude-opus-4-20250514
 
 using JuMP
-using Ipopt
 
 ni = 20000
 alpha = 350.0
 h = 1/ni
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, -1.0 <= t[i=0:ni] <= 1.0, start = 0.05*cos(i*h))
 @variable(model, -0.05 <= x[i=0:ni] <= 0.05, start = 0.05*cos(i*h))

@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 t = 5000
 xt = 10.0
@@ -15,7 +14,7 @@ w = xt * (t + 1) / 2
 
 fmax = xt / t
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, 0.0 <= x[i in 0:t] <= xt, start = i * h)
 @variable(model, y[0:t])

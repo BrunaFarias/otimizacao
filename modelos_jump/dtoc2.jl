@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 n = 1300
 nx = 20
@@ -11,7 +10,7 @@ ny = 30
 
 c = [((i+j)/(2*ny)) for i in 1:ny, j in 1:nx]
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[1:n-1, 1:nx])
 @variable(model, y[1:n, 1:ny])

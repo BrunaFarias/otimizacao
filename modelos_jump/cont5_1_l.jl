@@ -3,7 +3,6 @@
 # Modelo : claude-opus-4-20250514
 
 using JuMP
-using Ipopt
 
 n = 300
 m = n
@@ -21,7 +20,7 @@ e132 = e13*(e13-1)
 nu = s2*e132
 yt = [e1*cos(j*dx) for j in 0:n]
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, -10 <= y[0:m, 0:n] <= 10)
 @variable(model, 0 <= u[i in 1:m] <= 1)

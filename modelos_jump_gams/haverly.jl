@@ -1,0 +1,30 @@
+using JuMP
+
+model = Model()
+
+@variable(model, x1 >= 0)
+@variable(model, x2 >= 0)
+@variable(model, x3 >= 0)
+@variable(model, x4 >= 0)
+@variable(model, x5 >= 0)
+@variable(model, 0 <= x6 <= 100)
+@variable(model, 0 <= x7 <= 200)
+@variable(model, x8 >= 0, start = 1)
+@variable(model, x9 >= 0, start = 1)
+@variable(model, x10 >= 0, start = 1)
+@variable(model, x11 >= 0, start = 1)
+@variable(model, x12 >= 0, start = 1)
+@variable(model, objvar)
+
+@objective(model, Min, objvar)
+
+@constraint(model, x1 - 6*x3 - 16*x4 - 10*x5 == 0)
+@constraint(model, x2 - 9*x6 - 15*x7 == 0)
+@constraint(model, x6 - x8 - x10 == 0)
+@constraint(model, x7 - x9 - x11 == 0)
+@constraint(model, x3 + x4 - x10 - x11 == 0)
+@constraint(model, x5 - x8 - x9 == 0)
+@constraint(model, x12*(x10 + x11) - 3*x3 - x4 == 0)
+@constraint(model, x12*x10 - 2.5*x10 - 0.5*x8 <= 0)
+@constraint(model, x12*x11 - 1.5*x11 + 0.5*x9 <= 0)
+@constraint(model, x1 - x2 - objvar == 0)

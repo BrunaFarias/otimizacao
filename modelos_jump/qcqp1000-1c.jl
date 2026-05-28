@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 using Random
 
 Random.seed!(1234)
@@ -147,7 +146,7 @@ for i in 1:(pl+pq)
     end
 end
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[1:n])
 

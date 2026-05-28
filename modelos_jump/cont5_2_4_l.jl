@@ -3,9 +3,8 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 n = 300
 m = n

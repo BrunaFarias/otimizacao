@@ -3,7 +3,6 @@
 # Modelo : claude-opus-4-20250514
 
 using JuMP
-using Ipopt
 
 n = 6400
 R_v = 1.0
@@ -13,7 +12,7 @@ alpha = 1.5
 pi = 3.14159265358979
 d_theta = 2*pi/(5*(n+1))
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, R_min <= r[i=1:n] <= R_max)
 

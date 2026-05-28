@@ -28,7 +28,7 @@ import anthropic
 # Lê a chave da variável de ambiente (mais seguro que colocar no código)
 # Linux/Mac:  export ANTHROPIC_API_KEY="sk-ant-..."
 # Windows:    $env:ANTHROPIC_API_KEY = "sk-ant-..."
-CHAVE_API = os.environ.get("ANTHROPIC_API_KEY", "COLOQUE_SUA_CHAVE_AQUI")
+CHAVE_API = os.environ.get("ANTHROPIC_API_KEY", "SUA_CHAVE_AQUI")
 
 PASTA_ORIGEM  = "dados_ampl"
 PASTA_DESTINO = "modelos_jump"

@@ -1,13 +1,10 @@
 """
 executar_experimentos.jl
 ------------------------
-Executa a bateria de testes NLP para UM solver por vez.
+Parte 1 — Bateria AMPL-NLP (47 problemas oficiais)
+Executa UM solver por vez com captura de métricas detalhadas.
 
-IMPORTANTE: Os arquivos .jl em modelos_jump/ devem conter APENAS
-o modelo (variáveis, restrições, objetivo) sem optimize! no final.
-O script injeta o solver e chama optimize! automaticamente.
-
-Uso — rode cada solver em uma sessão Julia separada:
+Uso:
     julia scripts_automacao/executar_experimentos.jl Ipopt
     julia scripts_automacao/executar_experimentos.jl MadNLP
     julia scripts_automacao/executar_experimentos.jl NLopt
@@ -24,17 +21,14 @@ using DataFrames
 using Dates
 
 # ── Configurações ──────────────────────────────────────────────────────────────
-# Caminhos absolutos baseados na localização do script (funciona de qualquer pasta)
-const DIR_RAIZ         = dirname(dirname(abspath(@__FILE__)))
-const PASTA_MODELOS    = joinpath(DIR_RAIZ, "modelos_jump")
-const ARQ_RESULTADOS   = joinpath(DIR_RAIZ, "resultados", "resultados_ampl.csv")
-const TEMPO_LIMITE     = 300.0   # 5 minutos por problema (hardcoded — não usar variável global)
+const DIR_RAIZ       = dirname(dirname(abspath(@__FILE__)))
+const PASTA_MODELOS  = joinpath(DIR_RAIZ, "modelos_jump")
+const ARQ_RESULTADOS = joinpath(DIR_RAIZ, "resultados", "resultados_ampl.csv")
+const TEMPO_LIMITE   = 300.0
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Verifica se o solver foi passado no terminal
 if length(ARGS) == 0
-    println("❌ Erro: informe o solver no terminal.")
-    println("   Uso: julia scripts_automacao/executar_experimentos.jl <solver>")
+    println("❌ Uso: julia scripts_automacao/executar_experimentos.jl <solver>")
     println("   Solvers: Ipopt | MadNLP | NLopt | UnoSolver | Optim")
     exit(1)
 end
@@ -42,7 +36,7 @@ end
 SOLVER_NOME = ARGS[1]
 
 println("=" ^ 60)
-println("NLP BENCHMARK — Solver: $SOLVER_NOME")
+println("NLP BENCHMARK — AMPL — Solver: $SOLVER_NOME")
 println("Data/Hora : $(now())")
 println("Raiz      : $DIR_RAIZ")
 println("=" ^ 60)
@@ -52,23 +46,29 @@ if SOLVER_NOME == "Ipopt"
     import Ipopt
     otimizador = optimizer_with_attributes(
         Ipopt.Optimizer,
-        "print_level" => 0,
-        "max_iter"    => 5000
+        "print_level"      => 0,
+        "max_iter"         => 5000,
+        "tol"              => 1e-6,      # tolerância primal
+        "dual_inf_tol"     => 1.0,       # tolerância dual infeasibility
+        "constr_viol_tol"  => 1e-4,      # violação de restrição
+        "acceptable_tol"   => 1e-2,      # tolerância aceitável (fallback)
+        "acceptable_iter"  => 15,        # iterações com tolerância aceitável
     )
 
 elseif SOLVER_NOME == "MadNLP"
     import MadNLP
     otimizador = optimizer_with_attributes(
         MadNLP.Optimizer,
-        "print_level" => MadNLP.ERROR,
-        "max_iter"    => 5000
+        "print_level"  => MadNLP.ERROR,
+        "max_iter"     => 5000,
+        "tol"          => 1e-6,
     )
 
 elseif SOLVER_NOME == "NLopt"
     import NLopt
     otimizador = optimizer_with_attributes(
         NLopt.Optimizer,
-        "algorithm" => :LD_MMA
+        "algorithm" => :LD_SLSQP
     )
 
 elseif SOLVER_NOME == "UnoSolver"
@@ -82,38 +82,42 @@ elseif SOLVER_NOME == "Optim"
     import Ipopt
     otimizador = optimizer_with_attributes(
         Ipopt.Optimizer,
-        "print_level" => 0,
-        "max_iter"    => 5000
+        "print_level"     => 0,
+        "max_iter"        => 5000,
+        "tol"             => 1e-6,
+        "dual_inf_tol"    => 1.0,
+        "acceptable_tol"  => 1e-2,
     )
     println("⚠️  Optim não tem wrapper JuMP nativo — usando Ipopt como proxy.")
     global SOLVER_NOME = "Optim(proxy=Ipopt)"
 
 else
     println("❌ Solver desconhecido: $SOLVER_NOME")
-    println("   Use: Ipopt | MadNLP | NLopt | UnoSolver | Optim")
     exit(1)
 end
 
-# ── Prepara pasta e arquivo de resultados ─────────────────────────────────────
+# ── Prepara resultados ────────────────────────────────────────────────────────
 mkpath(joinpath(DIR_RAIZ, "resultados"))
 
 if !isfile(ARQ_RESULTADOS)
     CSV.write(ARQ_RESULTADOS, DataFrame(
-        Problema       = String[],
-        Solver         = String[],
-        Status         = String[],
-        Tempo_Segundos = Float64[],
-        Valor_Objetivo = Float64[],
-        Timestamp      = String[]
+        Problema          = String[],
+        Solver            = String[],
+        Status            = String[],
+        Tempo_Segundos    = Float64[],
+        Valor_Objetivo    = Float64[],
+        Dual_Infeasibility = Float64[],
+        Primal_Infeasibility = Float64[],
+        Iteracoes         = Int[],
+        Timestamp         = String[]
     ))
     println("📄 Arquivo criado: $ARQ_RESULTADOS")
 end
 
-# Carrega execuções já feitas para retomar de onde parou
 df_existente  = CSV.read(ARQ_RESULTADOS, DataFrame; missingstring="NaN")
 ja_executados = Set(zip(df_existente.Problema, df_existente.Solver))
 
-# ── Lista arquivos .jl ────────────────────────────────────────────────────────
+# ── Lista arquivos ────────────────────────────────────────────────────────────
 if !isdir(PASTA_MODELOS)
     println("❌ Pasta não encontrada: $PASTA_MODELOS")
     exit(1)
@@ -122,7 +126,7 @@ end
 arquivos_jl = sort(filter(x -> endswith(x, ".jl"), readdir(PASTA_MODELOS)))
 
 if isempty(arquivos_jl)
-    println("❌ Nenhum arquivo .jl encontrado em: $PASTA_MODELOS")
+    println("❌ Nenhum .jl encontrado em: $PASTA_MODELOS")
     exit(1)
 end
 
@@ -142,7 +146,6 @@ for (i, arquivo) in enumerate(arquivos_jl)
     caminho_arquivo = joinpath(PASTA_MODELOS, arquivo)
     nome_problema   = replace(arquivo, ".jl" => "")
 
-    # Pula se já executado com este solver
     if (nome_problema, SOLVER_NOME) in ja_executados
         skip_count += 1
         println("[$i/$total] ⏩ $nome_problema — já executado")
@@ -152,24 +155,36 @@ for (i, arquivo) in enumerate(arquivos_jl)
     print("[$i/$total] ⚙️  $nome_problema ... ")
     flush(stdout)
 
-    status_final   = "FALHA_DESCONHECIDA"
-    tempo_execucao = 0.0
-    obj_val        = NaN
+    status_final        = "FALHA_DESCONHECIDA"
+    tempo_execucao      = 0.0
+    obj_val             = NaN
+    dual_inf            = NaN
+    primal_inf          = NaN
+    iteracoes           = 0
 
     try
-        # O include cria o model internamente
         include(caminho_arquivo)
-
-        # Injeta o solver e o limite de tempo
         set_optimizer(model, otimizador)
         set_time_limit_sec(model, 300.0)
 
-        # Executa e mede o tempo
         tempo_execucao = @elapsed optimize!(model)
         status_final   = string(termination_status(model))
 
         if has_values(model)
             obj_val = objective_value(model)
+        end
+
+        # Captura métricas de infeasibility
+        try
+            dual_inf   = MOI.get(model, MOI.DualObjectiveValue())
+        catch; end
+        try
+            primal_inf = MOI.get(model, MOI.ConstraintPrimalStart())
+        catch; end
+        try
+            iteracoes = MOI.get(model, MOI.SimplexIterations())
+        catch
+            try iteracoes = MOI.get(model, MOI.BarrierIterations()) catch; end
         end
 
     catch e
@@ -179,24 +194,25 @@ for (i, arquivo) in enumerate(arquivos_jl)
         println("\n  ⚠️  $(msg[1:min(150, length(msg))])")
     end
 
-    # Salva imediatamente no CSV
     CSV.write(ARQ_RESULTADOS, DataFrame(
-        Problema       = [nome_problema],
-        Solver         = [SOLVER_NOME],
-        Status         = [status_final],
-        Tempo_Segundos = [tempo_execucao],
-        Valor_Objetivo = [obj_val],
-        Timestamp      = [string(now())]
+        Problema             = [nome_problema],
+        Solver               = [SOLVER_NOME],
+        Status               = [status_final],
+        Tempo_Segundos       = [tempo_execucao],
+        Valor_Objetivo       = [obj_val],
+        Dual_Infeasibility   = [dual_inf],
+        Primal_Infeasibility = [primal_inf],
+        Iteracoes            = [iteracoes],
+        Timestamp            = [string(now())]
     ); append=true)
 
     ok = occursin("OPTIMAL", status_final) || occursin("LOCALLY_SOLVED", status_final)
     ok ? (ok_count += 1) : (err_count += 1)
-    println("$(ok ? "✅" : "❌") $status_final | obj=$(round(obj_val, digits=6)) | t=$(round(tempo_execucao, digits=3))s")
+    println("$(ok ? "✅" : "❌") $status_final | obj=$(round(obj_val, digits=4)) | t=$(round(tempo_execucao, digits=3))s")
 end
 
-# ── Resumo final ──────────────────────────────────────────────────────────────
 println("\n" * "=" ^ 60)
-println("SOLVER $SOLVER_NOME — SESSÃO FINALIZADA")
+println("SOLVER $SOLVER_NOME — AMPL FINALIZADO")
 println("  ✅ Convergiu : $ok_count")
 println("  ❌ Falhou    : $err_count")
 println("  ⏩ Pulados   : $skip_count")

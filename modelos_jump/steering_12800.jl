@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 pi = 3.1415927
 
@@ -19,7 +18,7 @@ y2_n = 5
 y3_n = 45
 y4_n = 0
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, u[i in 0:nh])
 @variable(model, y1[i in 0:nh])

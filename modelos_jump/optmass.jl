@@ -3,13 +3,12 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 n = 10000
 speed = 0.01
 pen = 0.335
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[j in 1:2, i in 0:n+1])
 @variable(model, v[j in 1:2, i in 0:n+1])

@@ -3,7 +3,6 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 n = 160
 n1 = n - 1
@@ -25,7 +24,7 @@ for i in 1:n1
     end
 end
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, 0 <= u[i=0:n, j=0:n] <= ub, start = 6)
 @variable(model, r <= f[i=1:n1, j=1:n1] <= d, start = 1.5)

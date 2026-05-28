@@ -1,0 +1,167 @@
+# Gerado automaticamente por converter_ampl.py
+# Origem : ex8_3_8.gms
+# Modelo : claude-sonnet-4-5
+
+using JuMP, Ipopt
+
+model = Model()
+
+@variables(model, begin
+    objvar
+    x2 >= 0, (start = 50, upper_bound = 1000)
+    x3 >= 0, (start = 50, upper_bound = 1000)
+    x4 >= 0, (start = 50, upper_bound = 1000)
+    x5 >= 0, (start = 50, upper_bound = 1000)
+    x6 >= 0, (start = 50, upper_bound = 1000)
+    x7 >= 0, (start = 50, upper_bound = 1000)
+    x8 >= 0, (start = 50, upper_bound = 1000)
+    x9 >= 0, (start = 50, upper_bound = 1000)
+    x10 >= 0, (start = 50, upper_bound = 1000)
+    x11 >= 0, (start = 50, upper_bound = 1000)
+    x12 >= 0, (start = 0.2, upper_bound = 10)
+    x13 >= 0, (start = 0.2, upper_bound = 10)
+    x14 >= 0, (start = 0.2, upper_bound = 10)
+    x15 >= 0, (start = 0.2, upper_bound = 10)
+    x16 >= 0, (start = 0.2, upper_bound = 10)
+    x17 >= 0, (start = 0.2, upper_bound = 10)
+    x18 >= 0, (start = 0.2, upper_bound = 10)
+    x19 >= 0, (start = 0.2, upper_bound = 10)
+    x20 >= 0, (start = 0.2, upper_bound = 10)
+    x21 >= 0, (start = 0.2, upper_bound = 10)
+    x22 >= 0, (start = 0.2, upper_bound = 10)
+    x23 >= 0, (start = 0.2, upper_bound = 10)
+    x24 >= 0, (start = 0.2, upper_bound = 10)
+    x25 >= 0, (start = 0.2, upper_bound = 10)
+    x26 >= 0, (start = 0.2, upper_bound = 10)
+    x27 >= 0, (start = 0.2, upper_bound = 10)
+    x28 >= 0, (start = 0.2, upper_bound = 10)
+    x29 >= 0, (start = 0.2, upper_bound = 10)
+    x30 >= 0, (start = 0.2, upper_bound = 10)
+    x31 >= 0, (start = 0.2, upper_bound = 10)
+    x32 >= 0, (start = 0.2, upper_bound = 10)
+    x33 >= 0, (start = 0.2, upper_bound = 10)
+    x34 >= 0, (start = 0.2, upper_bound = 10)
+    x35 >= 0, (start = 0.2, upper_bound = 10)
+    x36 >= 0, (start = 0.2, upper_bound = 10)
+    x37 >= 0, (start = 100, upper_bound = 1000)
+    x38 >= 0, (start = 100, upper_bound = 1000)
+    x39 >= 0, (start = 100, upper_bound = 1000)
+    x40 >= 0, (start = 100, upper_bound = 1000)
+    x41 >= 0, (start = 100, upper_bound = 1000)
+    x42 >= 0, (start = 0.2, upper_bound = 10)
+    x43 >= 0, (start = 0.2, upper_bound = 10)
+    x44 >= 0, (start = 0.2, upper_bound = 10)
+    x45 >= 0, (start = 0.2, upper_bound = 10)
+    x46 >= 0, (start = 0.2, upper_bound = 10)
+    x47 >= 0, (start = 0.2, upper_bound = 10)
+    x48 >= 0, (start = 0.2, upper_bound = 10)
+    x49 >= 0, (start = 0.2, upper_bound = 10)
+    x50 >= 0, (start = 0.2, upper_bound = 10)
+    x51 >= 0, (start = 0.2, upper_bound = 10)
+    x52 >= 0, (start = 0.2, upper_bound = 10)
+    x53 >= 0, (start = 0.2, upper_bound = 10)
+    x54 >= 0, (start = 0.2, upper_bound = 10)
+    x55 >= 0, (start = 0.2, upper_bound = 10)
+    x56 >= 0, (start = 0.2, upper_bound = 10)
+    x57 >= 0, (start = 0.2, upper_bound = 10)
+    x58 >= 0, (start = 0.2, upper_bound = 10)
+    x59 >= 0, (start = 0.2, upper_bound = 10)
+    x60 >= 0, (start = 0.2, upper_bound = 10)
+    x61 >= 0, (start = 0.2, upper_bound = 10)
+    x62 >= 0, (start = 0.2, upper_bound = 10)
+    x63 >= 0, (start = 0.2, upper_bound = 10)
+    x64 >= 0, (start = 0.2, upper_bound = 10)
+    x65 >= 0, (start = 0.2, upper_bound = 10)
+    x66 >= 0, (start = 0.2, upper_bound = 10)
+    x67 >= 0, (start = 50, upper_bound = 1000)
+    x68 >= 0, (start = 50, upper_bound = 1000)
+    x69 >= 0, (start = 50, upper_bound = 1000)
+    x70 >= 0, (start = 50, upper_bound = 1000)
+    x71 >= 0, (start = 50, upper_bound = 1000)
+    x72 >= 0, (start = 50, upper_bound = 1000)
+    x73 >= 0, (start = 50, upper_bound = 1000)
+    x74 >= 0, (start = 50, upper_bound = 1000)
+    x75 >= 0, (start = 50, upper_bound = 1000)
+    x76 >= 0, (start = 50, upper_bound = 1000)
+    x77 >= 0, (start = 50, upper_bound = 1000)
+    x78 >= 0, (start = 50, upper_bound = 1000)
+    x79 >= 0, (start = 50, upper_bound = 1000)
+    x80 >= 0, (start = 50, upper_bound = 1000)
+    x81 >= 0, (start = 50, upper_bound = 1000)
+    x82 >= 0, (start = 50, upper_bound = 1000)
+    x83 >= 0, (start = 50, upper_bound = 1000)
+    x84 >= 0, (start = 50, upper_bound = 1000)
+    x85 >= 0, (start = 50, upper_bound = 1000)
+    x86 >= 0, (start = 50, upper_bound = 1000)
+    x87 >= 0, (start = 50, upper_bound = 1000)
+    x88 >= 0, (start = 50, upper_bound = 1000)
+    x89 >= 0, (start = 50, upper_bound = 1000)
+    x90 >= 0, (start = 50, upper_bound = 1000)
+    x91 >= 0, (start = 50, upper_bound = 1000)
+    x92 >= 0, (start = 50, upper_bound = 1000)
+    x93 >= 0, (start = 50, upper_bound = 1000)
+    x94 >= 0, (start = 50, upper_bound = 1000)
+    x95 >= 0, (start = 50, upper_bound = 1000)
+    x96 >= 0, (start = 50, upper_bound = 1000)
+    x97 >= 0, (start = 100, upper_bound = 1000)
+    x98 >= 0, (start = 0.2, upper_bound = 10)
+    x99 >= 0, (start = 0.2, upper_bound = 10)
+    x100 >= 0, (start = 0.2, upper_bound = 10)
+    x101 >= 0, (start = 0.2, upper_bound = 10)
+    x102 >= 0, (start = 0.2, upper_bound = 10)
+    x103 >= 0, (start = 1, upper_bound = 10000)
+    x104 >= 0, (start = 1, upper_bound = 10000)
+    x105 >= 0, (start = 1, upper_bound = 10000)
+    x106 >= 0, (start = 1, upper_bound = 10000)
+    x107 >= 0, (start = 1, upper_bound = 10000)
+    x108 >= 0, (upper_bound = 10000)
+    x109 >= 0, (upper_bound = 10000)
+    x110 >= 0, (upper_bound = 10000)
+    x111 >= 0, (upper_bound = 10000)
+    x112 >= 0, (upper_bound = 10000)
+    x113 >= 0, (upper_bound = 10000)
+    x114 >= 0, (upper_bound = 10000)
+    x115 >= 0, (upper_bound = 10000)
+    x116 >= 0, (upper_bound = 10000)
+    x117 >= 0, (upper_bound = 10000)
+    x118 >= 0, (upper_bound = 10000)
+    x119 >= 0, (upper_bound = 10000)
+    x120 >= 0, (upper_bound = 10000)
+    x121 >= 0, (upper_bound = 10000)
+    x122 >= 0, (upper_bound = 10000)
+    x123 >= 0, (upper_bound = 10000)
+    x124 >= 0, (upper_bound = 10000)
+    x125 >= 0, (upper_bound = 10000)
+    x126 >= 0, (upper_bound = 10000)
+    x127 >= 0, (upper_bound = 10000)
+end)
+
+@objective(model, Min, objvar)
+
+@NLconstraints(model, begin
+    e1, -objvar - x100 == 0
+    e2, -x2 - x3 - x4 - x5 - x6 == -100
+    e3, -x2 + x7 - x67 - x72 - x77 - x82 - x87 == 0
+    e4, -x3 + x8 - x68 - x73 - x78 - x83 - x88 == 0
+    e5, -x4 + x9 - x69 - x74 - x79 - x84 - x89 == 0
+    e6, -x5 + x10 - x70 - x75 - x80 - x85 - x90 == 0
+    e7, -x6 + x11 - x71 - x76 - x81 - x86 - x91 == 0
+    e8, x12*x7 - (x42*x67 + x47*x72 + x52*x77 + x57*x82 + x62*x87) - 6*x2 == 0
+    e9, x13*x7 - (x43*x67 + x48*x72 + x53*x77 + x58*x82 + x63*x87) == 0
+    e10, x14*x7 - (x44*x67 + x49*x72 + x54*x77 + x59*x82 + x64*x87) == 0
+    e11, x15*x7 - (x45*x67 + x50*x72 + x55*x77 + x60*x82 + x65*x87) == 0
+    e12, x16*x7 - (x46*x67 + x51*x72 + x56*x77 + x61*x82 + x66*x87) == 0
+    e13, x17*x8 - (x42*x68 + x47*x73 + x52*x78 + x57*x83 + x62*x88) - 6*x3 == 0
+    e14, x18*x8 - (x43*x68 + x48*x73 + x53*x78 + x58*x83 + x63*x88) == 0
+    e15, x19*x8 - (x44*x68 + x49*x73 + x54*x78 + x59*x83 + x64*x88) == 0
+    e16, x20*x8 - (x45*x68 + x50*x73 + x55*x78 + x60*x83 + x65*x88) == 0
+    e17, x21*x8 - (x46*x68 + x51*x73 + x56*x78 + x61*x83 + x66*x88) == 0
+    e18, x22*x9 - (x42*x69 + x47*x74 + x52*x79 + x57*x84 + x62*x89) - 6*x4 == 0
+    e19, x23*x9 - (x43*x69 + x48*x74 + x53*x79 + x58*x84 + x63*x89) == 0
+    e20, x24*x9 - (x44*x69 + x49*x74 + x54*x79 + x59*x84 + x64*x89) == 0
+    e21, x25*x9 - (x45*x69 + x50*x74 + x55*x79 + x60*x84 + x65*x89) == 0
+    e22, x26*x9 - (x46*x69 + x51*x74 + x56*x79 + x61*x84 + x66*x89) == 0
+    e23, x27*x10 - (x42*x70 + x47*x75 + x52*x80 + x57*x85 + x62*x90) - 6*x5 == 0
+    e24, x28*x10 - (x43*x70 + x48*x75 + x53*x80 + x58*x85 + x63*x90) == 0
+    e25, x29*x10 - (x44*x70 + x49*x75 + x54*x80 + x59*x85 + x64*x90) == 0
+    e26, x30*x10 - (x45*x70 + x50*x75 + x55*x80 + x60

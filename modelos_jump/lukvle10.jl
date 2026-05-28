@@ -3,11 +3,10 @@
 # Modelo : claude-sonnet-4-5
 
 using JuMP
-using Ipopt
 
 n = 250000
 
-model = Model(Ipopt.Optimizer)
+model = Model()
 
 @variable(model, x[i in 1:n], start = (i % 2 == 1 ? -1.0 : 1.0))
 
